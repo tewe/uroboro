@@ -1,6 +1,7 @@
 module Uroboro.Parser
     (
       expression
+    , pattern
     ) where
 
 import Control.Monad (liftM)
@@ -34,3 +35,13 @@ application = do
     f <- identifier
     es <- parens $ commaSep expression
     return $ Application f es
+
+pattern = try constructorPattern
+      <|> variablePattern
+
+variablePattern = liftM VariablePattern $ identifier
+
+constructorPattern = do
+    c <- identifier
+    ps <- parens $ commaSep pattern
+    return $ ConstructorPattern c ps

@@ -30,3 +30,13 @@ spec = do
             parse expression "" "f ( x ) " `shouldBe` Right
                 (Application "f" [Variable "x"])
             parse expression "" " f(x)" `shouldSatisfy` isLeft
+    describe "pattern" $ do
+        it "parses constructor patterns" $ do
+            parse pattern "" "cons(x, xs)" `shouldBe` Right
+                (ConstructorPattern "cons"
+                    [VariablePattern "x", VariablePattern "xs"])
+        it "nests" $ do
+            parse pattern "" "cons(x, cons(y, empty))" `shouldBe` Right
+                (ConstructorPattern "cons" [VariablePattern "x",
+                    (ConstructorPattern "cons"
+                        [VariablePattern "y", VariablePattern "empty"])])
