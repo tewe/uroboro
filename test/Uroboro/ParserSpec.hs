@@ -3,7 +3,7 @@ module Uroboro.ParserSpec
       spec
     ) where
 
-import Data.Either (isLeft)
+import Data.Either (isLeft, isRight)
 import Text.Parsec (parse)
 
 import Test.Hspec
@@ -11,6 +11,36 @@ import Test.Hspec
 import Uroboro.Parser
 import Uroboro.Syntax
 import Utils()
+
+mapCode = unlines [
+    "function map(IntToInt, ListOfInt): ListOfInt where",
+    "    map(f, empty()) = empty()",
+    "    map(f, cons(x, xs)) = cons(f.apply(x), map(f, xs))"
+	]
+mapTree = FunctionDefinition
+    (Signature "map" ["IntToInt", "ListOfInt"] "ListOfInt")
+    [
+    ApplicationPattern
+        [VariablePattern "f", ConstructorPattern "empty" []]
+        []
+        (Application "empty" []),
+    ApplicationPattern
+        [
+            VariablePattern "f",
+            ConstructorPattern "cons" [VariablePattern "x", VariablePattern "xs"]
+        ]
+        []
+        (Application "cons" [
+            DestructorApplication (Variable "f") "apply" [Variable "x"],
+            Application "map" [Variable "f", Variable "xs"]
+        ])
+    ]
+
+mapStreamCode = unlines [
+    "function mapStream(IntToInt, StreamOfInt): StreamOfInt where",
+    "    mapStream(f, s).head() = f.apply(s.head())",
+    "    mapStream(f, s).tail() = mapStream(f, s.tail())"
+    ]
 
 spec :: Spec
 spec = do
@@ -67,3 +97,9 @@ spec = do
         it "parses codata types" $ do
             parse codataDefinition "" "codata StreamOfInt where StreamOfInt.head(): Int"
                 `shouldBe` Right (CodataDefinition "StreamOfInt" [Signature "head" [] "Int"])
+
+    describe "functionDefinition" $ do
+        it "parses functions" $ do
+            parse functionDefinition "" mapCode `shouldBe` Right mapTree
+        it "recognizes copatterns" $ do
+            parse functionDefinition "" mapStreamCode `shouldSatisfy` isRight
