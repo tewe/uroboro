@@ -30,6 +30,7 @@ spec = do
             parse expression "" "f ( x ) " `shouldBe` Right
                 (Application "f" [Variable "x"])
             parse expression "" " f(x)" `shouldSatisfy` isLeft
+
     describe "pattern" $ do
         it "parses constructor patterns" $ do
             parse pattern "" "cons(x, xs)" `shouldBe` Right
@@ -40,3 +41,24 @@ spec = do
                 (ConstructorPattern "cons" [VariablePattern "x",
                     (ConstructorPattern "cons"
                         [VariablePattern "y", VariablePattern "empty"])])
+
+    describe "dataDefinition" $ do
+        it "parses data types" $ do
+            parse dataDefinition "" "data ListOfInt where empty(): ListOfInt"
+                `shouldBe` Right (DataDefinition "ListOfInt"
+                    [Signature "empty" [] "ListOfInt"])
+        it "handles line breaks" $ do
+            parse dataDefinition "" "data ListOfInt where\nempty(): ListOfInt"
+                `shouldBe` Right (DataDefinition "ListOfInt"
+                    [Signature "empty" [] "ListOfInt"])
+        it "handles tabs" $ do
+            parse dataDefinition "" "data ListOfInt where\n\tempty(): ListOfInt"
+                `shouldBe` Right (DataDefinition "ListOfInt"
+                    [Signature "empty" [] "ListOfInt"])
+        it "parses multiple constructors" $ do
+            parse dataDefinition "" "data ListOfInt where \
+                \   empty(): ListOfInt \
+                \   cons(Int, ListOfInt): ListOfInt"
+                `shouldBe` Right (DataDefinition "ListOfInt"
+                    [Signature "empty" [] "ListOfInt",
+                    Signature "cons" ["Int", "ListOfInt"] "ListOfInt"])
