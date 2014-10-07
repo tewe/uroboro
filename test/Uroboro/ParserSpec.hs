@@ -12,11 +12,14 @@ import Uroboro.Parser
 import Uroboro.Syntax
 import Utils()
 
+mapCode :: String
 mapCode = unlines [
     "function map(IntToInt, ListOfInt): ListOfInt where",
     "    map(f, empty()) = empty()",
     "    map(f, cons(x, xs)) = cons(f.apply(x), map(f, xs))"
 	]
+
+mapTree :: Definition
 mapTree = FunctionDefinition
     (Signature "map" ["IntToInt", "ListOfInt"] "ListOfInt")
     [
@@ -36,6 +39,7 @@ mapTree = FunctionDefinition
         ])
     ]
 
+mapStreamCode :: String
 mapStreamCode = unlines [
     "function mapStream(IntToInt, StreamOfInt): StreamOfInt where",
     "    mapStream(f, s).head() = f.apply(s.head())",

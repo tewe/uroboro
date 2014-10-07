@@ -2,11 +2,17 @@ import System.Environment
 
 import Text.Parsec (parse)
 
-import Uroboro.Parser (expression)
+import Uroboro.Parser (library, expression)
+
+parseFromFile p fname = do
+    input <- readFile fname
+    return $ parse p fname input
 
 main :: IO ()
 main = do
     args <- getArgs
-    case parse expression "(argument)" (args !! 0) of
+    lib <- parseFromFile library (args !! 0)
+    case lib of
         Left e -> print e
-        Right x -> print x
+        Right x -> putStrLn $ "We can't type check yet, but your" ++
+            " code was recognized :)"

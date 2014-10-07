@@ -1,0 +1,18 @@
+function map(IntToInt, ListOfInt): ListOfInt where
+    map(f, empty()) = empty()
+    map(f, cons(x, xs)) = cons(f.apply(x), map(f, xs))
+
+data ListOfInt where
+    empty(): ListOfInt
+    cons(Int, ListOfInt): ListOfInt
+
+codata StreamOfInt where
+    StreamOfInt.head(): Int
+    StreamOfInt.tail(): StreamOfInt
+
+codata IntToInt where
+    IntToInt.apply(Int): Int
+
+function mapStream(IntToInt, StreamOfInt): StreamOfInt where
+    mapStream(f, s).head() = f.apply(s.head())
+    mapStream(f, s).tail() = mapStream(f, s.tail())
