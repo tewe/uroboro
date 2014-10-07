@@ -1,10 +1,4 @@
-module Uroboro.Syntax
-    (
-      Exp(..)
-    , Pattern(..)
-    , Signature(..)
-    , Definition(..)
-    ) where
+module Uroboro.Syntax where
 
 type Identifier = String
 
@@ -23,5 +17,10 @@ type Type = Identifier
 
 data Signature = Signature Identifier [Type] Type deriving (Show, Eq)
 
+data Copattern = DestructorCopattern Identifier [Pattern] deriving (Show, Eq)
+
+data ApplicationPattern = ApplicationPattern [Pattern] [Copattern] Exp deriving (Show, Eq)
+
 data Definition = DataDefinition Identifier [Signature]
-                | CodataDefinition Identifier [Signature] deriving (Show, Eq)
+                | CodataDefinition Identifier [Signature]
+                | FunctionDefinition Signature [ApplicationPattern] deriving (Show, Eq)

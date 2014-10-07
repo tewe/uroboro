@@ -19,6 +19,7 @@ parens = P.parens lexer
 dot = P.dot lexer
 reserved = P.reserved lexer
 colon = P.colon lexer
+symbol = P.symbol lexer
 
 identifier = P.identifier lexer
 type_ = identifier
@@ -78,3 +79,27 @@ codataDefinition = do
     reserved "where"
     s <- many1 selector
     return $ CodataDefinition c s
+
+destructorCopattern = do
+    dot
+    s <- identifier
+    ps <- parens $ commaSep pattern
+    return $ DestructorCopattern s ps
+
+applicationPattern = do
+    f <- identifier
+    ps <- parens $ commaSep pattern
+    cs <- many destructorCopattern
+    symbol "="
+    e <- expression
+    return $ ApplicationPattern ps cs e
+
+functionDefinition = do
+    reserved "function"
+    f <- identifier
+    ts <- parens $ commaSep type_
+    colon
+    t <- type_
+    reserved "where"
+    ps <- many1 applicationPattern
+    return $ FunctionDefinition (Signature f ts t) ps
