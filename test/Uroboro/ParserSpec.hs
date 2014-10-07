@@ -106,3 +106,5 @@ spec = do
             parse functionDefinition "" mapCode `shouldBe` Right mapTree
         it "recognizes copatterns" $ do
             parse functionDefinition "" mapStreamCode `shouldSatisfy` isRight
+    it "recognizes programs" $ do
+        parse library "" (mapCode ++ "\n" ++ mapStreamCode) `shouldSatisfy` isRight

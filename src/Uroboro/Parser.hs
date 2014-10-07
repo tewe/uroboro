@@ -5,6 +5,7 @@ module Uroboro.Parser
     , dataDefinition
     , codataDefinition
     , functionDefinition
+    , library
     ) where
 
 import Control.Monad (liftM)
@@ -108,3 +109,12 @@ functionDefinition = do
     reserved "where"
     ps <- many1 applicationPattern
     return $ FunctionDefinition (Signature f ts t) ps
+
+definition = choice
+    [ dataDefinition
+    , codataDefinition
+    , functionDefinition
+    ]
+
+library :: Parser Library
+library = many definition

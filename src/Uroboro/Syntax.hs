@@ -24,3 +24,5 @@ data ApplicationPattern = ApplicationPattern [Pattern] [Copattern] Exp deriving 
 data Definition = DataDefinition Identifier [Signature]
                 | CodataDefinition Identifier [Signature]
                 | FunctionDefinition Signature [ApplicationPattern] deriving (Show, Eq)
+
+type Library = [Definition]
