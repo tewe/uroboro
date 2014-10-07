@@ -14,6 +14,8 @@ import qualified Text.Parsec.Token as P
 import Uroboro.Language (languageDef)
 import Uroboro.Syntax
 
+type Parser = Parsec String ()
+
 lexer = P.makeTokenParser languageDef
 commaSep = P.commaSep lexer
 parens = P.parens lexer
@@ -21,6 +23,7 @@ dot = P.dot lexer
 reserved = P.reserved lexer
 colon = P.colon lexer
 symbol = P.symbol lexer
+lexeme = P.lexeme lexer
 
 identifier = P.identifier lexer
 type_ = identifier
@@ -65,8 +68,9 @@ dataDefinition = do
     cs <- many1 constructor
     return $ DataDefinition d cs
 
-selector = do
-    c <- type_
+selector :: String -> Parser Signature
+selector c = do
+    lexeme $ string c
     dot
     s <- identifier
     ts <- parens $ commaSep type_
@@ -78,7 +82,7 @@ codataDefinition = do
     reserved "codata"
     c <- type_
     reserved "where"
-    s <- many1 selector
+    s <- many1 $ selector c
     return $ CodataDefinition c s
 
 destructorCopattern = do

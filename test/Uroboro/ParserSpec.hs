@@ -97,6 +97,9 @@ spec = do
         it "parses codata types" $ do
             parse codataDefinition "" "codata StreamOfInt where StreamOfInt.head(): Int"
                 `shouldBe` Right (CodataDefinition "StreamOfInt" [Signature "head" [] "Int"])
+        it "rejects hole name mismatches" $ do
+            parse codataDefinition "" "codata StreamOfInt where Bogus.head(): Int"
+                `shouldSatisfy` isLeft
 
     describe "functionDefinition" $ do
         it "parses functions" $ do
