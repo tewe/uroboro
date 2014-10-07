@@ -23,4 +23,5 @@ type Type = Identifier
 
 data Signature = Signature Identifier [Type] Type deriving (Show, Eq)
 
-data Definition = DataDefinition Identifier [Signature] deriving (Show, Eq)
+data Definition = DataDefinition Identifier [Signature]
+                | CodataDefinition Identifier [Signature] deriving (Show, Eq)

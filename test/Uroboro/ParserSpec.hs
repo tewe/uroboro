@@ -62,3 +62,8 @@ spec = do
                 `shouldBe` Right (DataDefinition "ListOfInt"
                     [Signature "empty" [] "ListOfInt",
                     Signature "cons" ["Int", "ListOfInt"] "ListOfInt"])
+
+    describe "codataDefinition" $ do
+        it "parses codata types" $ do
+            parse codataDefinition "" "codata StreamOfInt where StreamOfInt.head(): Int"
+                `shouldBe` Right (CodataDefinition "StreamOfInt" [Signature "head" [] "Int"])

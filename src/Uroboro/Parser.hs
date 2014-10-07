@@ -3,6 +3,7 @@ module Uroboro.Parser
       expression
     , pattern
     , dataDefinition
+    , codataDefinition
     ) where
 
 import Control.Monad (liftM)
@@ -61,3 +62,19 @@ dataDefinition = do
     reserved "where"
     cs <- many1 constructor
     return $ DataDefinition d cs
+
+selector = do
+    c <- type_
+    dot
+    s <- identifier
+    ts <- parens $ commaSep type_
+    colon
+    t <- type_
+    return $ Signature s ts t
+
+codataDefinition = do
+    reserved "codata"
+    c <- type_
+    reserved "where"
+    s <- many1 selector
+    return $ CodataDefinition c s
