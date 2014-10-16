@@ -91,7 +91,8 @@ destructorCopattern q = do {
     ; dot
     ; s <- identifier
     ; ps <- parens $ commaSep pattern
-    ; return $ DestructorCopattern q s ps
+    ; let c = DestructorCopattern q s ps
+    ; option c (destructorCopattern c)
     } <|> return q
 
 rule :: String -> Parser Rule
