@@ -17,9 +17,10 @@ type Type = Identifier
 
 data Signature = Signature Identifier [Type] Type deriving (Show, Eq)
 
-data Copattern = DestructorCopattern Identifier [Pattern] deriving (Show, Eq)
+data Copattern = Hole [Pattern]
+               | DestructorCopattern Copattern Identifier [Pattern] deriving (Show, Eq)
 
-data Rule = Rule [Pattern] [Copattern] Exp deriving (Show, Eq)
+data Rule = Rule Copattern Exp deriving (Show, Eq)
 
 data Definition = DataDefinition Identifier [Signature]
                 | CodataDefinition Identifier [Signature]

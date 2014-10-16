@@ -86,20 +86,22 @@ codataDefinition = do
     s <- many1 $ selector c
     return $ CodataDefinition c s
 
-destructorCopattern = do
-    dot
-    s <- identifier
-    ps <- parens $ commaSep pattern
-    return $ DestructorCopattern s ps
+destructorCopattern :: Copattern -> Parser Copattern
+destructorCopattern q = do {
+    ; dot
+    ; s <- identifier
+    ; ps <- parens $ commaSep pattern
+    ; return $ DestructorCopattern q s ps
+    } <|> return q
 
 rule :: String -> Parser Rule
 rule f = do
     lexeme $ string f
     ps <- parens $ commaSep pattern
-    cs <- many destructorCopattern
+    c <- destructorCopattern (Hole ps)
     symbol "="
     e <- expression
-    return $ Rule ps cs e
+    return $ Rule c e
 
 functionDefinition = do
     reserved "function"

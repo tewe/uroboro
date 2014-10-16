@@ -24,15 +24,13 @@ mapTree = FunctionDefinition
     (Signature "map" ["IntToInt", "ListOfInt"] "ListOfInt")
     [
     Rule
-        [VariablePattern "f", ConstructorPattern "empty" []]
-        []
+        (Hole [VariablePattern "f", ConstructorPattern "empty" []])
         (Application "empty" []),
     Rule
-        [
+        (Hole [
             VariablePattern "f",
             ConstructorPattern "cons" [VariablePattern "x", VariablePattern "xs"]
-        ]
-        []
+        ])
         (Application "cons" [
             DestructorApplication (Variable "f") "apply" [Variable "x"],
             Application "map" [Variable "f", Variable "xs"]
@@ -44,6 +42,25 @@ mapStreamCode = unlines [
     "function mapStream(IntToInt, StreamOfInt): StreamOfInt where",
     "    mapStream(f, s).head() = f.apply(s.head())",
     "    mapStream(f, s).tail() = mapStream(f, s.tail())"
+    ]
+
+mapStreamTree :: Definition
+mapStreamTree = FunctionDefinition
+    (Signature "mapStream" ["IntToInt", "StreamOfInt"] "StreamOfInt")
+    [ Rule
+        (DestructorCopattern (Hole [VariablePattern "f", VariablePattern "s"]) "head" [])
+        (DestructorApplication (Variable "f") "apply" [DestructorApplication (Variable "s") "head" []])
+    , Rule
+        (DestructorCopattern (Hole [VariablePattern "f", VariablePattern "s"]) "tail" [])
+        (Application "mapStream" [Variable "f", DestructorApplication (Variable "s") "tail" []])
+    ]
+
+fibCode :: String
+fibCode = unlines
+    [ "function fib(): StreamOfInt where"
+    , "   fib().head() = zero()"
+    , "    fib().tail().head() = succ(zero())"
+    , "    fib().tail().tail() = zipWith(addTwo, fib(), fib().tail())"
     ]
 
 spec :: Spec
@@ -110,6 +127,10 @@ spec = do
             parse functionDefinition "" mapCode `shouldBe` Right mapTree
         it "recognizes copatterns" $ do
             parse functionDefinition "" mapStreamCode `shouldSatisfy` isRight
+        it "parses copatterns" $ do
+            parse functionDefinition "" mapStreamCode `shouldBe` Right mapStreamTree
+        it "recognizes nested copatterns" $ do
+            parse functionDefinition "" fibCode `shouldSatisfy` isRight
         it "rejects hole name mismatches" $ do
             parse functionDefinition "" "function f(): T where g() = x" `shouldSatisfy` isLeft
     it "recognizes programs" $ do
