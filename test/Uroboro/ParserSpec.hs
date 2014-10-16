@@ -23,11 +23,11 @@ mapTree :: Definition
 mapTree = FunctionDefinition
     (Signature "map" ["IntToInt", "ListOfInt"] "ListOfInt")
     [
-    ApplicationPattern
+    Rule
         [VariablePattern "f", ConstructorPattern "empty" []]
         []
         (Application "empty" []),
-    ApplicationPattern
+    Rule
         [
             VariablePattern "f",
             ConstructorPattern "cons" [VariablePattern "x", VariablePattern "xs"]

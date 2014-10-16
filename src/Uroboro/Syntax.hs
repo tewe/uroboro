@@ -19,10 +19,10 @@ data Signature = Signature Identifier [Type] Type deriving (Show, Eq)
 
 data Copattern = DestructorCopattern Identifier [Pattern] deriving (Show, Eq)
 
-data ApplicationPattern = ApplicationPattern [Pattern] [Copattern] Exp deriving (Show, Eq)
+data Rule = Rule [Pattern] [Copattern] Exp deriving (Show, Eq)
 
 data Definition = DataDefinition Identifier [Signature]
                 | CodataDefinition Identifier [Signature]
-                | FunctionDefinition Signature [ApplicationPattern] deriving (Show, Eq)
+                | FunctionDefinition Signature [Rule] deriving (Show, Eq)
 
 type Library = [Definition]
