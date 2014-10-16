@@ -1,3 +1,8 @@
+data Int where
+    zero(): Int
+    succ(Int): Int
+    pred(Int): Int
+
 function map(IntToInt, ListOfInt): ListOfInt where
     map(f, empty()) = empty()
     map(f, cons(x, xs)) = cons(f.apply(x), map(f, xs))
