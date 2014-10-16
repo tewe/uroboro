@@ -92,8 +92,9 @@ destructorCopattern = do
     ps <- parens $ commaSep pattern
     return $ DestructorCopattern s ps
 
-rule = do
-    f <- identifier
+rule :: String -> Parser Rule
+rule f = do
+    lexeme $ string f
     ps <- parens $ commaSep pattern
     cs <- many destructorCopattern
     symbol "="
@@ -107,7 +108,7 @@ functionDefinition = do
     colon
     t <- type_
     reserved "where"
-    ps <- many1 rule
+    ps <- many1 $ rule f
     return $ FunctionDefinition (Signature f ts t) ps
 
 definition = choice
