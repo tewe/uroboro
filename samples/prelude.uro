@@ -14,11 +14,11 @@ codata IntToInt where
     IntToInt.apply(Int): Int
 
 codata TwoIntToInt where
-	TwoIntToInt.apply(Int, Int): Int
+    TwoIntToInt.apply(Int, Int): Int
 
 function zipWith(TwoIntToInt, StreamOfInt, StreamOfInt): StreamOfInt where
-	zipWith(f, a, b).head() = f.apply(a.head(), b.head())
-	zipWith(f, a, b).tail() = zipWith(f, a.tail(), b.tail())
+    zipWith(f, a, b).head() = f.apply(a.head(), b.head())
+    zipWith(f, a, b).tail() = zipWith(f, a.tail(), b.tail())
 
 function mapStream(IntToInt, StreamOfInt): StreamOfInt where
     mapStream(f, s).head() = f.apply(s.head())
