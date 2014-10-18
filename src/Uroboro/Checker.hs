@@ -6,6 +6,7 @@ module Uroboro.Checker
     , findFunction
     ) where
 
+import Data.Either (isRight)
 import Data.List (find)
 import Data.Maybe (listToMaybe)
 
@@ -46,6 +47,18 @@ typecheck p c e t = case e of
         Just t' -> if t == t' then Right e else Left "mismatch"
         Nothing -> Left "unknown"
 
-    Application f args -> case signature p f of
-        Just (Signature _ ts t') -> if t == t' then Right e else Left "mismatch"
-        Nothing -> Left "unknown"
+    Application n es -> case (typecheck p c (FunctionApplication n es) t, typecheck p c (ConstructorApplication n es) t) of
+        (Right e, Left _) -> Right e
+        (Left _, Right e) -> Right e
+        _ -> Left "ambiguous"
+
+    FunctionApplication n es -> typecheckApplication p c e es t $ findFunction p n
+
+    ConstructorApplication n es -> typecheckApplication p c e es t $ findConstructor p n
+
+typecheckApplication :: Library -> Context -> Exp -> [Exp] -> Type -> Maybe Sig -> Either String Exp
+typecheckApplication p c e es t' (Just (ts, t)) =
+    if t /= t' then Left "return mismatch" else
+    if length es /= length ts then Left "wrong number of arguments" else
+    if all isRight $ zipWith (typecheck p c) es ts then Right e else Left "argument mismatch"
+typecheckApplication _ _ _ _ _ _ = Left "unknown"

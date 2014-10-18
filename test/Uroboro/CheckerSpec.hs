@@ -3,6 +3,8 @@ module Uroboro.CheckerSpec
       spec
     ) where
 
+import Data.Either (isLeft, isRight)
+
 import Test.Hspec
 
 import Uroboro.Syntax
@@ -32,3 +34,14 @@ spec = do
         it "may check out" $ do
             let e = Variable "x"
             typecheck [] [("x", "Int")] e "Int" `shouldBe` Right e
+    describe "constructors" $ do
+        it "may check out" $ do
+            typecheck library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldSatisfy` isRight
+        it "check the return type" $ do
+            typecheck library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "H" `shouldBe` Left "return mismatch"
+        it "check the number of arguments" $ do
+            typecheck library [("x", "T")] (ConstructorApplication "c" [Variable "x", Variable "y"]) "D" `shouldBe` Left "wrong number of arguments"
+        it "recurse" $ do
+            typecheck library [("x", "A")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Left "argument mismatch"
+        it "may not exist" $ do
+            typecheck library [("x", "T")] (ConstructorApplication "d" [Variable "x"]) "D" `shouldBe` Left "unknown"
