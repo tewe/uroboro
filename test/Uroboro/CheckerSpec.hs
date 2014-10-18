@@ -30,5 +30,5 @@ spec = do
         it "may not match" $ do
             typecheck [] [("x", "Char")] (Variable "x") "Int" `shouldBe` Left "mismatch"
         it "may check out" $ do
+            let e = Variable "x"
             typecheck [] [("x", "Int")] e "Int" `shouldBe` Right e
-          where e = Variable "x"
