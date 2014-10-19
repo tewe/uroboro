@@ -45,3 +45,14 @@ spec = do
             typecheck library [("x", "A")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Left "argument mismatch"
         it "may not exist" $ do
             typecheck library [("x", "T")] (ConstructorApplication "d" [Variable "x"]) "D" `shouldBe` Left "unknown"
+    describe "destructors" $ do
+        it "may check out" $ do
+            check library [("x", "C"), ("y", "T1")] (DestructorApplication (Variable "x") "head" [Variable "y"]) "T2" `shouldBe` Right (TDes "head" (TVar "x" "C") [TVar "y" "T1"] "T2")
+    describe "functions" $ do
+        it "may check out" $ do
+            check library [("x", "T")] (FunctionApplication "f" [Variable "x"]) "T" `shouldBe` Right (TApp "f" [TVar "x" "T"] "T")
+    describe "applications inference" $ do
+        it "finds functions" $ do
+            check library [("x", "T")] (Application "f" [Variable "x"]) "T" `shouldBe` Right (TApp "f" [TVar "x" "T"] "T")
+        it "finds constructors" $ do
+            check library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Right (TCon "c" [TVar "x" "T"] "D")
