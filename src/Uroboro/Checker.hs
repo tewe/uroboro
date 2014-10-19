@@ -15,11 +15,6 @@ import Uroboro.Syntax
 type Context = [(Identifier, Type)]
 type Sig = ([Type], Type)
 
-signature :: Library -> Identifier -> Maybe Signature
-signature ((FunctionDefinition s@(Signature f _ _) _):xs) f' = if f == f' then Just s else signature xs f'
-signature (x:xs) f = signature xs f
-signature _ _ = Nothing
-
 constructors :: Definition -> [Signature]
 constructors (DataDefinition _ ss) = ss
 constructors _ = []
