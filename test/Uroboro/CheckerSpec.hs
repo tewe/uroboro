@@ -20,31 +20,25 @@ library = [
 
 spec :: Spec
 spec = do
-    it "can look up constructors" $ do
-        findConstructor library "c" `shouldBe` Just (["T"], "D")
-    it "can look up destructors" $ do
-        findDestructor library "C" "head" `shouldBe` Just (["T1"], "T2")
-    it "can look up functions" $ do
-        findFunction library "f" `shouldBe` Just (["T"], "T")
     describe "variables" $ do
         it "may be unknown" $ do
-            typecheck [] [] (Variable "x") "Int" `shouldBe` Left "unknown"
+            check [] [] (Variable "x") "Int" `shouldBe` Left "unknown"
         it "may not match" $ do
-            typecheck [] [("x", "Char")] (Variable "x") "Int" `shouldBe` Left "mismatch"
+            check [] [("x", "Char")] (Variable "x") "Int" `shouldBe` Left "mismatch"
         it "may check out" $ do
             let e = Variable "x"
-            typecheck [] [("x", "Int")] e "Int" `shouldBe` Right e
+            check [] [("x", "Int")] e "Int" `shouldBe` Right (TVar "x" "Int")
     describe "constructors" $ do
         it "may check out" $ do
-            typecheck library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldSatisfy` isRight
+            check library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldSatisfy` isRight
         it "check the return type" $ do
-            typecheck library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "H" `shouldBe` Left "return mismatch"
+            check library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "H" `shouldBe` Left "unknown"
         it "check the number of arguments" $ do
-            typecheck library [("x", "T")] (ConstructorApplication "c" [Variable "x", Variable "y"]) "D" `shouldBe` Left "wrong number of arguments"
+            check library [("x", "T")] (ConstructorApplication "c" [Variable "x", Variable "y"]) "D" `shouldBe` Left "wrong number of arguments"
         it "recurse" $ do
-            typecheck library [("x", "A")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Left "argument mismatch"
+            check library [("x", "A")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Left "mismatch"
         it "may not exist" $ do
-            typecheck library [("x", "T")] (ConstructorApplication "d" [Variable "x"]) "D" `shouldBe` Left "unknown"
+            check library [("x", "T")] (ConstructorApplication "d" [Variable "x"]) "D" `shouldBe` Left "unknown"
     describe "destructors" $ do
         it "may check out" $ do
             check library [("x", "C"), ("y", "T1")] (DestructorApplication (Variable "x") "head" [Variable "y"]) "T2" `shouldBe` Right (TDes "head" (TVar "x" "C") [TVar "y" "T1"] "T2")
