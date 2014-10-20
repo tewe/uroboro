@@ -50,3 +50,8 @@ spec = do
             check library [("x", "T")] (Application "f" [Variable "x"]) "T" `shouldBe` Right (TApp "f" [TVar "x" "T"] "T")
         it "finds constructors" $ do
             check library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Right (TCon "c" [TVar "x" "T"] "D")
+    describe "patterns" $ do
+        it "binds variables" $ do
+            checkp library (VariablePattern "x") "T" `shouldBe` Right [("x", "T")]
+        it "nests" $ do
+            checkp library (ConstructorPattern "c" [VariablePattern "x"]) "D" `shouldBe` Right [("x", "T")]

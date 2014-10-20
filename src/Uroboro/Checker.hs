@@ -1,10 +1,11 @@
 module Uroboro.Checker
     (
       check
+    , checkp
     , TExp(..)
     ) where
 
-import Control.Monad (mapM)
+import Control.Monad (mapM, zipWithM, foldM)
 import Data.Either (isRight)
 import Data.List (find)
 import Data.Maybe (listToMaybe)
@@ -23,6 +24,20 @@ etype (TCon _ _ t) = t
 etype (TDes _ _ _ t) = t
 
 type Context = [(Identifier, Type)]
+
+insert :: Context -> (Identifier, Type) -> Either String Context
+insert c (k, v) = maybe (Right ((k, v):c)) (\v' -> Left "duplicate") (lookup k c)
+
+union :: Context -> Context -> Either String Context
+union a b = foldM insert a b
+
+checkp :: Library -> Pattern -> Type -> Either String Context
+checkp _ (VariablePattern x) t = return [(x, t)]
+checkp p (ConstructorPattern c ps) t = do
+    ts <- constructor p t c
+    cs <- zipWithM (checkp p) ps ts
+    c <- foldM union [] cs
+    if length ps /= length ts then Left "wrong number of arguments" else return c
 
 signature :: [Signature] -> Identifier -> Either String [Type]
 signature ((Signature n ts _):_) n' | n == n' = return ts
