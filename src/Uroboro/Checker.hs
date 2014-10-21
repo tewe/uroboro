@@ -2,6 +2,7 @@ module Uroboro.Checker
     (
       check
     , checkp
+    , checkc
     , TExp(..)
     ) where
 
@@ -24,6 +25,21 @@ etype (TCon _ _ t) = t
 etype (TDes _ _ _ t) = t
 
 type Context = [(Identifier, Type)]
+
+-- |Check that copattern eliminates given type into inferred type, yielding context.
+checkc :: Library -> ([Type], Type) -> Copattern -> Either String (Context, Type)
+checkc l (ts, t) (Hole ps) | length ts == length ps = do
+    cs <- zipWithM (checkp l) ps ts
+    c <- foldM union [] cs
+    return (c, t)
+                           | otherwise = Left "wrong number of arguments"
+checkc l ht (DestructorCopattern p n ps) = do
+    (c1, t) <- checkc l ht p
+    (ts, rt) <- nu l t n
+    cs <- zipWithM (checkp l) ps ts
+    c2 <- foldM union [] cs
+    c <- union c1 c2
+    if length ps /= length ts then Left "wrong number of arguments" else return (c, rt)
 
 insert :: Context -> (Identifier, Type) -> Either String Context
 insert c (k, v) = maybe (Right ((k, v):c)) (\v' -> Left "duplicate") (lookup k c)
@@ -77,6 +93,7 @@ inferd ((Signature n ts t):_) n' | n == n' = return (ts, t)
 inferd (_:ss) n = inferd ss n
 inferd _ _ = Left "unknown"
 
+-- |Look up signature of named destructor for type.
 nu :: Library -> Type -> Identifier -> Either String ([Type], Type)
 nu ((CodataDefinition c' ss):_) c d | c' == c = inferd ss d
 nu (_:ds) c d = nu ds c d

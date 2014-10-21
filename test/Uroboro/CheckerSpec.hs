@@ -55,3 +55,6 @@ spec = do
             checkp library (VariablePattern "x") "T" `shouldBe` Right [("x", "T")]
         it "nests" $ do
             checkp library (ConstructorPattern "c" [VariablePattern "x"]) "D" `shouldBe` Right [("x", "T")]
+    describe "copatterns" $ do
+        it "can be holes" $ do
+            checkc library (["T"], "T") (Hole [VariablePattern "x"]) `shouldBe` Right ([("x", "T")], "T")
