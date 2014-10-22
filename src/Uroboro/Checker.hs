@@ -3,6 +3,8 @@ module Uroboro.Checker
       check
     , checkp
     , checkc
+    , checkr
+    , typecheck
     , TExp(..)
     ) where
 
@@ -25,6 +27,21 @@ etype (TCon _ _ t) = t
 etype (TDes _ _ _ t) = t
 
 type Context = [(Identifier, Type)]
+
+-- |Check definitions.
+-- TODO return type for fold over programs?
+typecheck :: Library -> Definition -> Either String Library
+typecheck p d@(FunctionDefinition (Signature f ts t) rs) = do
+    tes <- mapM (checkr p (ts, t)) rs
+    return (d:p)
+
+-- |Check typing of rule for given function.
+-- TODO different return type.
+checkr :: Library -> ([Type], Type) -> Rule -> Either String TExp
+checkr p ft (Rule l r) = do
+    (c, t) <- checkc p ft l
+    te <- check p c r t
+    return te
 
 -- |Check that copattern eliminates given type into inferred type, yielding context.
 checkc :: Library -> ([Type], Type) -> Copattern -> Either String (Context, Type)
