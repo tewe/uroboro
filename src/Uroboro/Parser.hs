@@ -6,6 +6,7 @@ module Uroboro.Parser
     , codataDefinition
     , functionDefinition
     , library
+    , Parser
     ) where
 
 import Control.Monad (liftM)
