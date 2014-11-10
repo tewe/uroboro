@@ -64,6 +64,7 @@ insert c (k, v) = maybe (Right ((k, v):c)) (\v' -> Left "duplicate") (lookup k c
 union :: Context -> Context -> Either String Context
 union a b = foldM insert a b
 
+-- |Typecheck patterns
 checkp :: Library -> Pattern -> Type -> Either String Context
 checkp _ (VariablePattern x) t = return [(x, t)]
 checkp p (ConstructorPattern c ps) t = do
@@ -140,6 +141,7 @@ infer p c (DestructorApplication e n es) = do
     tes <- checkargs p c es ts
     return $ TDes n te tes t
 
+-- |Typecheck terms
 check :: Library -> Context -> Exp -> Type -> Either String TExp
 check p c e@(Variable x) t = do
     te <- infer p c e

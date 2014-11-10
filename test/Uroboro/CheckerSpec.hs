@@ -7,54 +7,84 @@ import Data.Either (isLeft, isRight)
 
 import Test.Hspec
 
+import Paths_uroboro
+import Uroboro.Parser
 import Uroboro.Syntax
 import Uroboro.Checker
+import Utils
 
-library :: Library
-library = [
-      DataDefinition "D" [Signature "c" ["T"] "D"]
-    , FunctionDefinition (Signature "f" ["T"] "T")
-         [Rule (Hole [VariablePattern "x"]) (Variable "x")]
-    , CodataDefinition "C" [Signature "head" ["T1"] "T2"]
+prelude = getDataFileName "samples/prelude.uro" >>= parseFromFile library
+
+-- |Context using prelude
+c = [
+      ("i", "Int")
+    , ("f", "IntToInt")
+    , ("g", "TwoIntToInt")
+    , ("l", "ListOfInt")
+    , ("s", "StreamOfInt")
     ]
 
 spec :: Spec
 spec = do
-    describe "variables" $ do
-        it "may be unknown" $ do
-            check [] [] (Variable "x") "Int" `shouldBe` Left "unknown"
-        it "may not match" $ do
-            check [] [("x", "Char")] (Variable "x") "Int" `shouldBe` Left "mismatch"
-        it "may check out" $ do
-            let e = Variable "x"
-            check [] [("x", "Int")] e "Int" `shouldBe` Right (TVar "x" "Int")
-    describe "constructors" $ do
-        it "may check out" $ do
-            check library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldSatisfy` isRight
-        it "check the return type" $ do
-            check library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "H" `shouldBe` Left "unknown"
-        it "check the number of arguments" $ do
-            check library [("x", "T")] (ConstructorApplication "c" [Variable "x", Variable "y"]) "D" `shouldBe` Left "wrong number of arguments"
-        it "recurse" $ do
-            check library [("x", "A")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Left "mismatch"
-        it "may not exist" $ do
-            check library [("x", "T")] (ConstructorApplication "d" [Variable "x"]) "D" `shouldBe` Left "unknown"
-    describe "destructors" $ do
-        it "may check out" $ do
-            check library [("x", "C"), ("y", "T1")] (DestructorApplication (Variable "x") "head" [Variable "y"]) "T2" `shouldBe` Right (TDes "head" (TVar "x" "C") [TVar "y" "T1"] "T2")
-    describe "functions" $ do
-        it "may check out" $ do
-            check library [("x", "T")] (FunctionApplication "f" [Variable "x"]) "T" `shouldBe` Right (TApp "f" [TVar "x" "T"] "T")
-    describe "applications inference" $ do
-        it "finds functions" $ do
-            check library [("x", "T")] (Application "f" [Variable "x"]) "T" `shouldBe` Right (TApp "f" [TVar "x" "T"] "T")
-        it "finds constructors" $ do
-            check library [("x", "T")] (ConstructorApplication "c" [Variable "x"]) "D" `shouldBe` Right (TCon "c" [TVar "x" "T"] "D")
+    describe "terms" $ do
+        context "when variables" $ do
+            it "may be unknown" $ do
+                check [] c (Variable "x") "Int" `shouldBe` Left "unknown"
+            it "may not match" $ do
+                check [] c (Variable "f") "Int" `shouldBe` Left "mismatch"
+            it "may check out" $ do
+                let e = Variable "i"
+                check [] c e "Int" `shouldBe` Right (TVar "i" "Int")
+        context "when constructors" $ do
+            it "may check out" $ do
+                p <- prelude
+                let e = ConstructorApplication "succ" [Variable "i"]
+                check p c e "Int" `shouldSatisfy` isRight
+            it "check the return type" $ do
+                p <- prelude
+                let e = ConstructorApplication "succ" [Variable "i"]
+                check p c e "T" `shouldBe` Left "unknown"
+            it "check the number of arguments" $ do
+                p <- prelude
+                let e = ConstructorApplication "succ" [Variable "i", Variable "s"]
+                check p c e "Int" `shouldBe` Left "wrong number of arguments"
+            it "recurse" $ do
+                p <- prelude
+                let e = ConstructorApplication "succ" [Variable "s"]
+                check p c e "Int" `shouldBe` Left "mismatch"
+            it "may not exist" $ do
+                p <- prelude
+                let e = ConstructorApplication "full" []
+                check p c e "ListOfInt" `shouldBe` Left "unknown"
+        context "when destructors" $ do
+            it "may check out" $ do
+                p <- prelude
+                e <- parseString expression "f.apply(i)"
+                check p c e "Int" `shouldBe` Right (TDes "apply" (TVar "f" "IntToInt") [TVar "i" "Int"] "Int")
+        context "when functions" $ do
+            it "may check out" $ do
+                p <- prelude
+                check p [("f", "IntToInt"), ("l", "ListOfInt")] (FunctionApplication "map" [Variable "f", Variable "l"]) "ListOfInt" `shouldBe` Right (TApp "map" [TVar "f" "IntToInt", TVar "l" "ListOfInt"] "ListOfInt")
+        context "when applications" $ do
+            it "infer as functions" $ do
+                p <- prelude
+                e <- parseString expression "map(f, l)"
+                check p c e "ListOfInt" `shouldBe` Right (TApp "map" [TVar "f" "IntToInt", TVar "l" "ListOfInt"] "ListOfInt")
+            it "infer as constructors" $ do
+                p <- prelude
+                e <- parseString expression "succ(i)"
+                check p c e "Int" `shouldBe` Right (TCon "succ" [TVar "i" "Int"] "Int")
     describe "patterns" $ do
-        it "binds variables" $ do
-            checkp library (VariablePattern "x") "T" `shouldBe` Right [("x", "T")]
-        it "nests" $ do
-            checkp library (ConstructorPattern "c" [VariablePattern "x"]) "D" `shouldBe` Right [("x", "T")]
+        it "bind variables" $ do
+            checkp [] (VariablePattern "x") "T" `shouldBe` Right [("x", "T")]
+        it "nest" $ do
+            p <- prelude
+            e <- parseString pattern "succ(i)"
+            checkp p e "Int" `shouldBe` Right [("i", "Int")]
     describe "copatterns" $ do
         it "can be holes" $ do
-            checkc library (["T"], "T") (Hole [VariablePattern "x"]) `shouldBe` Right ([("x", "T")], "T")
+            checkc [] (["Int"], "Char") (Hole [VariablePattern "i"]) `shouldBe` Right ([("i", "Int")], "Char") -- chr(i)
+    describe "typecheck" $ do
+        it "checks functions" $ do
+            p <- prelude
+            typecheck p (last p) `shouldSatisfy` isRight -- TODO don't depend on order
