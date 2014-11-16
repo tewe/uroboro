@@ -10,6 +10,7 @@ import Test.Hspec
 import Paths_uroboro
 import Uroboro.Parser
 import Uroboro.Syntax
+import Uroboro.Abstract
 import Uroboro.Checker
 import Utils
 

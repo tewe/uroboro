@@ -5,7 +5,6 @@ module Uroboro.Checker
     , checkc
     , checkr
     , typecheck
-    , TExp(..)
     ) where
 
 import Control.Monad (mapM, zipWithM, foldM)
@@ -14,11 +13,7 @@ import Data.List (find)
 import Data.Maybe (listToMaybe)
 
 import Uroboro.Syntax
-
-data TExp = TVar Identifier Type
-          | TApp Identifier [TExp] Type
-          | TCon Identifier [TExp] Type -- positive
-          | TDes Identifier TExp [TExp] Type deriving (Show, Eq) -- negative
+import Uroboro.Abstract
 
 etype :: TExp -> Type
 etype (TVar _ t) = t
