@@ -5,6 +5,7 @@ module Uroboro.Checker
     , checkc
     , checkr
     , typecheck
+    , etype
     ) where
 
 import Control.Monad (mapM, zipWithM, foldM)
@@ -21,37 +22,44 @@ etype (TApp _ _ t) = t
 etype (TCon _ _ t) = t
 etype (TDes _ _ _ t) = t
 
+qtype :: TQ -> Type
+qtype (TQApp _ _ t) = t
+qtype (TQDes _ _ _ t) = t
+
 type Context = [(Identifier, Type)]
 
+pcontext :: TP -> Context
+pcontext (TPVar x t) = [(x, t)]
+pcontext (TPCons _ tps _) = concat $ map pcontext tps
+
+qcontext :: TQ -> Context
+qcontext (TQApp _ tps _) = concat $ map pcontext tps
+qcontext (TQDes tq _ tps _) = concat [qcontext tq, concat $ map pcontext tps]
+
 -- |Check definitions.
--- TODO return type for fold over programs?
-typecheck :: Library -> Definition -> Either String Library
-typecheck p d@(FunctionDefinition (Signature f ts t) rs) = do
-    tes <- mapM (checkr p (ts, t)) rs
-    return (d:p)
+typecheck :: Library -> Definition -> Either String TRules
+typecheck p (FunctionDefinition s rs) = mapM (checkr p s) rs
+typecheck p (DataDefinition n _) = return [] -- TODO check for name clash
+typecheck p (CodataDefinition n _) = return []
 
 -- |Check typing of rule for given function.
--- TODO different return type.
-checkr :: Library -> ([Type], Type) -> Rule -> Either String TExp
-checkr p ft (Rule l r) = do
-    (c, t) <- checkc p ft l
-    te <- check p c r t
-    return te
+checkr :: Library -> Signature -> Rule -> Either String (TQ, TExp)
+checkr p s@(Signature _ _ t) (Rule l r) = do
+    tq <- checkc p s l
+    te <- check p (qcontext tq) r t
+    return (tq, te)
 
 -- |Check that copattern eliminates given type into inferred type, yielding context.
-checkc :: Library -> ([Type], Type) -> Copattern -> Either String (Context, Type)
-checkc l (ts, t) (Hole ps) | length ts == length ps = do
+checkc :: Library -> Signature -> Copattern -> Either String TQ
+checkc l (Signature f ts t) (Hole ps) | length ts == length ps = do
     cs <- zipWithM (checkp l) ps ts
-    c <- foldM union [] cs
-    return (c, t)
-                           | otherwise = Left "wrong number of arguments"
-checkc l ht (DestructorCopattern p n ps) = do
-    (c1, t) <- checkc l ht p
-    (ts, rt) <- nu l t n
+    return $ TQApp f cs t
+                                      | otherwise = Left "wrong number of arguments"
+checkc l s (DestructorCopattern p n ps) = do
+    tq <- checkc l s p
+    (ts, rt) <- nu l (qtype tq) n
     cs <- zipWithM (checkp l) ps ts
-    c2 <- foldM union [] cs
-    c <- union c1 c2
-    if length ps /= length ts then Left "wrong number of arguments" else return (c, rt)
+    if length ps /= length ts then Left "wrong number of arguments" else return $ TQDes tq n cs rt
 
 insert :: Context -> (Identifier, Type) -> Either String Context
 insert c (k, v) = maybe (Right ((k, v):c)) (\v' -> Left "duplicate") (lookup k c)
@@ -60,13 +68,12 @@ union :: Context -> Context -> Either String Context
 union a b = foldM insert a b
 
 -- |Typecheck patterns
-checkp :: Library -> Pattern -> Type -> Either String Context
-checkp _ (VariablePattern x) t = return [(x, t)]
+checkp :: Library -> Pattern -> Type -> Either String TP
+checkp _ (VariablePattern x) t = return $ TPVar x t
 checkp p (ConstructorPattern c ps) t = do
     ts <- constructor p t c
     cs <- zipWithM (checkp p) ps ts
-    c <- foldM union [] cs
-    if length ps /= length ts then Left "wrong number of arguments" else return c
+    if length ps /= length ts then Left "wrong number of arguments" else return $ TPCons c cs t
 
 signature :: [Signature] -> Identifier -> Either String [Type]
 signature ((Signature n ts _):_) n' | n == n' = return ts

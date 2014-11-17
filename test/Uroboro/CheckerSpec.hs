@@ -77,14 +77,14 @@ spec = do
                 check p c e "Int" `shouldBe` Right (TCon "succ" [TVar "i" "Int"] "Int")
     describe "patterns" $ do
         it "bind variables" $ do
-            checkp [] (VariablePattern "x") "T" `shouldBe` Right [("x", "T")]
+            checkp [] (VariablePattern "x") "T" `shouldBe` Right (TPVar "x" "T")
         it "nest" $ do
             p <- prelude
             e <- parseString pattern "succ(i)"
-            checkp p e "Int" `shouldBe` Right [("i", "Int")]
+            checkp p e "Int" `shouldBe` Right (TPCons "succ" [TPVar "i" "Int"] "Int")
     describe "copatterns" $ do
         it "can be holes" $ do
-            checkc [] (["Int"], "Char") (Hole [VariablePattern "i"]) `shouldBe` Right ([("i", "Int")], "Char") -- chr(i)
+            checkc [] (Signature "chr" ["Int"] "Char") (Hole [VariablePattern "i"]) `shouldBe` Right (TQApp "chr" [TPVar "i" "Int"] "Char")
     describe "typecheck" $ do
         it "checks functions" $ do
             p <- prelude
