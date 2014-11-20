@@ -1,138 +1,52 @@
 module Uroboro.Parser
     (
-      expression
-    , pattern
-    , dataDefinition
-    , codataDefinition
-    , functionDefinition
-    , library
-    , Parser
+      pexp
     ) where
 
 import Control.Monad (liftM)
+import Control.Monad.Identity (Identity)
 import Text.Parsec
-import qualified Text.Parsec.Token as P
 
-import Uroboro.Language (languageDef)
-import Uroboro.Syntax
+import Uroboro.Token
+import Uroboro.Tree
 
-type Parser = Parsec String ()
+-- |No user state
+type Parser = ParsecT String () Identity
 
-lexer = P.makeTokenParser languageDef
-commaSep = P.commaSep lexer
-parens = P.parens lexer
-dot = P.dot lexer
-reserved = P.reserved lexer
-colon = P.colon lexer
-symbol = P.symbol lexer
-lexeme = P.lexeme lexer
-
-identifier = P.identifier lexer
-type_ = identifier
-
-select = do
+-- |identifier(parser, ...)
+call :: Parser a -> Parser (String, [a])
+call parser = do
     i <- identifier
-    e <- parens (commaSep expression)
-    return (i, e)
+    p <- parens (commaSep parser)
+    return (i, p)
 
-tra e (s, es) = DestructorApplication e s es
+-- |block start where lines
+def :: String -> Parser a -> Parser b -> Parser (a, [b])
+def block start line = do
+    _ <- reserved block
+    h <- start
+    _ <- reserved "where"
+    l <- many1 line
+    return (h, l)
 
-dest = do
-    e <- try application <|> variable
-    dot
-    (s, es):ss <- sepBy1 select dot
-    return $ foldl tra (DestructorApplication e s es) ss
+pvar :: Parser PExp
+pvar = liftM PVar (identifier)
 
-expression = try dest <|> try application <|> variable
+-- |app(arg, ...)
+papp :: Parser PExp
+papp = liftM (uncurry PApp) (call pexp)
 
-dotOperator = do
-    dot
-    return op
+-- |exp().des(arg, ...)
+pdes :: Parser PExp
+pdes = do
+    e <- try papp <|> pvar <?> "function or variable"
+    _ <- dot
+    sepBy1 (call pexp) dot  >>= return . (foldl makePdes e)
+  where makePdes e = uncurry (PDes e)
 
-op :: Exp -> Exp -> Exp
-e `op` (Application s es) = DestructorApplication e s es
-
-variable = liftM Variable $ identifier
-
-application = do
-    f <- identifier
-    es <- parens $ commaSep expression
-    return $ Application f es
-
-pattern = try constructorPattern
-      <|> variablePattern
-
-variablePattern = liftM VariablePattern $ identifier
-
-constructorPattern = do
-    c <- identifier
-    ps <- parens $ commaSep pattern
-    return $ ConstructorPattern c ps
-
-constructor = do
-    c <- identifier
-    ts <- parens $ commaSep type_
-    colon
-    t <- type_
-    return $ Signature c ts t
-
-dataDefinition = do
-    reserved "data"
-    d <- type_
-    reserved "where"
-    cs <- many1 constructor
-    return $ DataDefinition d cs
-
-selector :: String -> Parser Signature
-selector c = do
-    lexeme $ string c
-    dot
-    s <- identifier
-    ts <- parens $ commaSep type_
-    colon
-    t <- type_
-    return $ Signature s ts t
-
-codataDefinition = do
-    reserved "codata"
-    c <- type_
-    reserved "where"
-    s <- many1 $ selector c
-    return $ CodataDefinition c s
-
-destructorCopattern :: Copattern -> Parser Copattern
-destructorCopattern q = do {
-    ; dot
-    ; s <- identifier
-    ; ps <- parens $ commaSep pattern
-    ; let c = DestructorCopattern q s ps
-    ; option c (destructorCopattern c)
-    } <|> return q
-
-rule :: String -> Parser Rule
-rule f = do
-    lexeme $ string f
-    ps <- parens $ commaSep pattern
-    c <- destructorCopattern (Hole ps)
-    symbol "="
-    e <- expression
-    return $ Rule c e
-
-functionDefinition = do
-    reserved "function"
-    f <- identifier
-    ts <- parens $ commaSep type_
-    colon
-    t <- type_
-    reserved "where"
-    ps <- many1 $ rule f
-    return $ FunctionDefinition (Signature f ts t) ps
-
-definition = choice
-    [ dataDefinition
-    , codataDefinition
-    , functionDefinition
-    ]
-
-library :: Parser Library
-library = many definition
+-- |Parse expressions/terms
+pexp :: Parser PExp
+pexp = try pdes
+   <|> try papp
+   <|> pvar
+   <?> "expression"
