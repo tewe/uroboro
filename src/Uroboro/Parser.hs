@@ -30,7 +30,20 @@ lexeme = P.lexeme lexer
 identifier = P.identifier lexer
 type_ = identifier
 
-expression = (try application <|> variable) `chainl1` dotOperator
+select = do
+    i <- identifier
+    e <- parens (commaSep expression)
+    return (i, e)
+
+tra e (s, es) = DestructorApplication e s es
+
+dest = do
+    e <- try application <|> variable
+    dot
+    (s, es):ss <- sepBy1 select dot
+    return $ foldl tra (DestructorApplication e s es) ss
+
+expression = try dest <|> try application <|> variable
 
 dotOperator = do
     dot

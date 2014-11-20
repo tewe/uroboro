@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+
 module Uroboro.Language
     (
       languageDef
@@ -7,5 +9,6 @@ import Text.Parsec.Token
 import Text.Parsec.Language (haskellStyle)
 
 languageDef = haskellStyle
-    { reservedNames  = ["data", "codata", "function", "where"]
+    {
+      reservedNames  = ["data", "codata", "function", "where"]
     }
