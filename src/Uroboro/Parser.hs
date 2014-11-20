@@ -3,6 +3,7 @@ module Uroboro.Parser
       pexp
     ) where
 
+import Control.Applicative ((<*), (*>))
 import Control.Monad (liftM)
 import Control.Monad.Identity (Identity)
 import Text.Parsec
@@ -50,3 +51,7 @@ pexp = try pdes
    <|> try papp
    <|> pvar
    <?> "expression"
+
+-- |Parse command line
+pmain :: Parser PExp
+pmain = whiteSpace *> pexp <* eof

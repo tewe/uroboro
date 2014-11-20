@@ -9,6 +9,7 @@ module Uroboro.Token
     , parens
     , reserved
     , symbol
+    , whiteSpace
     ) where
 
 import qualified Text.Parsec.Token as P
@@ -24,3 +25,4 @@ identifier = P.identifier lexer
 parens     = P.parens     lexer
 reserved   = P.reserved   lexer
 symbol     = P.symbol     lexer
+whiteSpace = P.whiteSpace lexer
