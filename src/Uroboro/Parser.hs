@@ -42,7 +42,7 @@ pdes = do
     e <- try papp <|> pvar <?> "function or variable"
     _ <- dot
     sepBy1 (call pexp) dot  >>= return . (foldl makePdes e)
-  where makePdes e = uncurry (PDes e)
+  where makePdes exp (name, args) = PDes name args exp
 
 -- |Parse expressions/terms
 pexp :: Parser PExp
