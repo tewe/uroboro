@@ -55,3 +55,30 @@ pexp = try pdes
 -- |Parse command line
 pmain :: Parser PExp
 pmain = whiteSpace *> pexp <* eof
+
+-- |Parse pattern
+pp :: Parser PP
+pp = try ppcon
+ <|> ppvar
+ <?> "pattern"
+ where
+   ppvar = liftM PPVar (identifier)
+   ppcon = liftM (uncurry PPCon) (call pp)
+
+-- |Parse hole that starts a copattern
+pqapp :: Parser PQ
+pqapp = liftM (uncurry PQApp) (call pp)
+
+-- |hole().des(arg, ...)
+pqdes :: Parser PQ
+pqdes = do
+    h <- pqapp <?> "function"
+    _ <- dot
+    sepBy1 (call pp) dot >>= return . (foldl makePqdes h)
+  where makePqdes e (name, args) = PQDes name args e
+
+-- |Parse copattern
+pq :: Parser PQ
+pq = try pqdes
+ <|> pqapp
+ <?> "copattern"
