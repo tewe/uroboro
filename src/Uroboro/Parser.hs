@@ -1,6 +1,6 @@
 module Uroboro.Parser
     (
-      pexp
+      pmain
     ) where
 
 import Control.Applicative ((<*), (*>))
@@ -42,8 +42,8 @@ pdes :: Parser PExp
 pdes = do
     e <- try papp <|> pvar <?> "function or variable"
     _ <- dot
-    sepBy1 (call pexp) dot  >>= return . (foldl makePdes e)
-  where makePdes exp (name, args) = PDes name args exp
+    sepBy1 (call pexp) dot >>= return . (foldl makePdes e)
+  where makePdes e (name, args) = PDes name args e
 
 -- |Parse expressions/terms
 pexp :: Parser PExp
