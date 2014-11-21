@@ -21,6 +21,14 @@ call parser = do
     p <- parens (commaSep parser)
     return (i, p)
 
+-- |z().des(x, ...)
+des :: Parser a -> Parser b -> (String -> [b] -> a -> a) -> Parser a
+des pz px constructor = do
+    z <- pz
+    _ <- dot
+    sepBy1 (call px) dot >>= return . (foldl make z)
+  where make e (name, args) = constructor name args e
+
 -- |block start where lines
 def :: String -> Parser a -> Parser b -> Parser (a, [b])
 def block start line = do
@@ -39,11 +47,7 @@ papp = liftM (uncurry PApp) (call pexp)
 
 -- |exp().des(arg, ...)
 pdes :: Parser PExp
-pdes = do
-    e <- try papp <|> pvar <?> "function or variable"
-    _ <- dot
-    sepBy1 (call pexp) dot >>= return . (foldl makePdes e)
-  where makePdes e (name, args) = PDes name args e
+pdes = des (try papp <|> pvar <?> "function or variable") pexp PDes
 
 -- |Parse expressions/terms
 pexp :: Parser PExp
@@ -71,11 +75,7 @@ pqapp = liftM (uncurry PQApp) (call pp)
 
 -- |hole().des(arg, ...)
 pqdes :: Parser PQ
-pqdes = do
-    h <- pqapp <?> "function"
-    _ <- dot
-    sepBy1 (call pp) dot >>= return . (foldl makePqdes h)
-  where makePqdes e (name, args) = PQDes name args e
+pqdes = des (pqapp <?> "function") pp PQDes
 
 -- |Parse copattern
 pq :: Parser PQ
