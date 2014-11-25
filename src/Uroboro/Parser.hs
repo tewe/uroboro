@@ -1,7 +1,7 @@
 module Uroboro.Parser
     (
-      pmain
-    , plib
+      parseDef
+    , parseExp
     ) where
 
 import Control.Applicative ((<*), (<*>), (*>))
@@ -38,8 +38,8 @@ pexp = choice [des, app, var] <?> "expression"
     var = liftM PVar identifier
 
 -- |Parse exactly one expression
-pmain :: Parser PExp
-pmain = whiteSpace *> pexp <* eof
+parseExp :: Parser PExp
+parseExp = whiteSpace *> pexp <* eof
 
 -- |Parse pattern
 pp :: Parser PP
@@ -55,30 +55,19 @@ pq = choice [des, app] <?> "copattern"
     des = try $ dotNotation PQDes (app <?> "function") pp
     app = liftM PQApp identifier <*> args pp
 
--- |Parse "kind name"
-definition :: String -> (String -> a) -> Parser a
-definition kind make = liftM make (reserved kind *> identifier)
-
--- |Parse "where a..."
---where1 :: (a -> b) -> Parser a -> Parser [b]
-where1 :: Parser a -> Parser [a]
-where1 a = reserved "where" *> many1 a
-
--- |Parse data type
-ptpos :: Parser PT
-ptpos = definition "data" PTPos <* reserved "where"
-    <*> many1 (liftM PTCon identifier <*> args identifier <*> (colon *> identifier))
-
--- |Parse codata type
-ptneg :: Parser PT
-ptneg = definition "codata" PTNeg <*> where1 (liftM PTDes identifier
-    <*> (dot *> identifier) <*> args identifier <*> (colon *> identifier))
-
--- |Parse function
-ptfun :: Parser PT
-ptfun = definition "function" PTFun <*> args identifier <*> (colon *> identifier)
-    <*> where1 (liftM PTRule pq <*> (symbol "=" *> pexp))
-
 -- |Parse whole file
-plib :: Parser [PT]
-plib = whiteSpace *> many (choice [ptpos, ptneg, ptfun]) <* eof
+parseDef :: Parser [PT]
+parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
+  where
+    pos = definition "data" PTPos <* reserved "where"
+      <*> many1 (liftM PTCon identifier <*> args identifier <*> (colon *> identifier))
+    neg = definition "codata" PTNeg <*> where1 (liftM PTDes identifier
+      <*> (dot *> identifier) <*> args identifier <*> (colon *> identifier))
+    fun = definition "function" PTFun <*> args identifier <*> (colon *> identifier)
+      <*> where1 (liftM PTRule pq <*> (symbol "=" *> pexp))
+
+    definition :: String -> (String -> a) -> Parser a
+    definition kind make = liftM make (reserved kind *> identifier)
+
+    where1 :: Parser a -> Parser [a]
+    where1 a = reserved "where" *> many1 a
