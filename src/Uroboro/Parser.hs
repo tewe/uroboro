@@ -11,69 +11,48 @@ import Text.Parsec
 import Uroboro.Token
 import Uroboro.Tree
 
--- |No user state
+-- |Parser without user state
 type Parser = ParsecT String () Identity
 
--- |Parse (parser, ...)
+-- |Parse "(p, ...)"
 args :: Parser a -> Parser [a]
 args p = parens (commaSep p)
 
--- |Recursively apply a list of functions
+-- |Recursively apply a list of functions to a start value, from left to right
 fold :: a -> [a -> a] -> a
 fold x [] = x
 fold x (f:fs) = f (fold x fs)
 
--- |z().des(x, ...)
-des :: Parser a -> Parser b -> (String -> [b] -> a -> a) -> Parser a
-des pz px constructor = do
-    z <- pz
-    _ <- dot
-    sepBy1 (liftM constructor identifier <*> args px) dot >>= return . (fold z)
+-- |Parse "a.name(b, ...)..."
+dotNotation :: (String -> [b] -> a -> a) -> Parser a -> Parser b -> Parser a
+dotNotation make a b = liftM fold a <*> (dot *> sepBy1 name dot)
+            where name = liftM make identifier <*> args b
 
-pvar :: Parser PExp
-pvar = liftM PVar (identifier)
-
--- |app(arg, ...)
-papp :: Parser PExp
-papp = liftM PApp identifier <*> args pexp
-
--- |exp().des(arg, ...)
-pdes :: Parser PExp
-pdes = des (try papp <|> pvar <?> "function or variable") pexp PDes
-
--- |Parse expressions/terms
+-- |Parse expression
 pexp :: Parser PExp
-pexp = try pdes
-   <|> try papp
-   <|> pvar
-   <?> "expression"
+pexp = choice [des, app, var] <?> "expression"
+  where
+    des = try $ dotNotation PDes (app <|> var <?> "function or variable") pexp
+    app = try $ liftM PApp identifier <*> args pexp
+    var = liftM PVar identifier
 
--- |Parse command line
+-- |Parse exactly one expression
 pmain :: Parser PExp
 pmain = whiteSpace *> pexp <* eof
 
 -- |Parse pattern
 pp :: Parser PP
-pp = try ppcon
- <|> ppvar
- <?> "pattern"
- where
-   ppvar = liftM PPVar (identifier)
-   ppcon = liftM PPCon identifier <*> args pp
-
--- |Parse hole that starts a copattern
-pqapp :: Parser PQ
-pqapp = liftM PQApp identifier <*> args pp
-
--- |hole().des(arg, ...)
-pqdes :: Parser PQ
-pqdes = des (pqapp <?> "function") pp PQDes
+pp = choice [con, var] <?> "pattern"
+  where
+    con = try $ liftM PPCon identifier <*> args pp
+    var = liftM PPVar identifier
 
 -- |Parse copattern
 pq :: Parser PQ
-pq = try pqdes
- <|> pqapp
- <?> "copattern"
+pq = choice [des, app] <?> "copattern"
+  where
+    des = try $ dotNotation PQDes (app <?> "function") pp
+    app = liftM PQApp identifier <*> args pp
 
 -- |Parse data definition
 ptpos :: Parser PT
