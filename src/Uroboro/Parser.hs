@@ -92,3 +92,14 @@ ptpos = def "data" identifier $ liftM (uncurry PTCon) (call identifier)
 ptneg :: Parser PTNeg
 ptneg = def "codata" identifier $ liftM PTDes identifier <*> (dot *> identifier)
     <*> parens (commaSep identifier) <*> (colon *> identifier)
+
+-- |Parse function definition
+pfun :: Parser PFun
+pfun = def "function" psig prule
+  where
+    psig = liftM PSig identifier <*> parens (commaSep identifier) <*> (colon *> identifier)
+    prule = do
+        q <- pq
+        _ <- symbol "="
+        e <- pexp
+        return (q, e)

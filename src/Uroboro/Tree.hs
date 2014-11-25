@@ -17,3 +17,7 @@ data PTDes = PTDes String String [String] String deriving (Eq, Show)
 type PTPos = (String, [PTCon])
 
 type PTNeg = (String, [PTDes])
+
+data PSig = PSig String [String] String deriving (Eq, Show)
+
+type PFun = (PSig, [(PQ, PExp)])
