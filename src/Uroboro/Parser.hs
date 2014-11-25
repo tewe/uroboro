@@ -2,6 +2,7 @@ module Uroboro.Parser
     (
       parseDef
     , parseExp
+    , Parser
     ) where
 
 import Control.Applicative ((<*), (<*>), (*>))

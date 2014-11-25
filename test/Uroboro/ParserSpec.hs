@@ -3,135 +3,26 @@ module Uroboro.ParserSpec
       spec
     ) where
 
-import Data.Either (isLeft, isRight)
+import Data.Either (isRight)
 import Text.Parsec (parse)
 
 import Test.Hspec
 
 import Uroboro.Parser
-import Uroboro.Syntax
+import Uroboro.Tree
+
+import Paths_uroboro
 import Utils()
-
-mapCode :: String
-mapCode = unlines [
-    "function map(IntToInt, ListOfInt): ListOfInt where",
-    "    map(f, empty()) = empty()",
-    "    map(f, cons(x, xs)) = cons(f.apply(x), map(f, xs))"
-	]
-
-mapTree :: Definition
-mapTree = FunctionDefinition
-    (Signature "map" ["IntToInt", "ListOfInt"] "ListOfInt")
-    [
-    Rule
-        (Hole [VariablePattern "f", ConstructorPattern "empty" []])
-        (Application "empty" []),
-    Rule
-        (Hole [
-            VariablePattern "f",
-            ConstructorPattern "cons" [VariablePattern "x", VariablePattern "xs"]
-        ])
-        (Application "cons" [
-            DestructorApplication (Variable "f") "apply" [Variable "x"],
-            Application "map" [Variable "f", Variable "xs"]
-        ])
-    ]
-
-mapStreamCode :: String
-mapStreamCode = unlines [
-    "function mapStream(IntToInt, StreamOfInt): StreamOfInt where",
-    "    mapStream(f, s).head() = f.apply(s.head())",
-    "    mapStream(f, s).tail() = mapStream(f, s.tail())"
-    ]
-
-mapStreamTree :: Definition
-mapStreamTree = FunctionDefinition
-    (Signature "mapStream" ["IntToInt", "StreamOfInt"] "StreamOfInt")
-    [ Rule
-        (DestructorCopattern (Hole [VariablePattern "f", VariablePattern "s"]) "head" [])
-        (DestructorApplication (Variable "f") "apply" [DestructorApplication (Variable "s") "head" []])
-    , Rule
-        (DestructorCopattern (Hole [VariablePattern "f", VariablePattern "s"]) "tail" [])
-        (Application "mapStream" [Variable "f", DestructorApplication (Variable "s") "tail" []])
-    ]
-
-fibCode :: String
-fibCode = unlines
-    [ "function fib(): StreamOfInt where"
-    , "   fib().head() = zero()"
-    , "    fib().tail().head() = succ(zero())"
-    , "    fib().tail().tail() = zipWith(addTwo, fib(), fib().tail())"
-    ]
 
 spec :: Spec
 spec = do
-    describe "expression" $ do
-        it "does not parse operators" $ do
-            parse expression "" "+" `shouldSatisfy` isLeft
-        it "parses variables" $ do
-            parse expression "" "x" `shouldBe` Right (Variable "x")
-        it "recognizes applications" $ do
-            parse expression "" "f()" `shouldBe` Right (Application "f" [])
-            parse expression "" "e.s()" `shouldBe` Right
-                (DestructorApplication (Variable "e") "s" [])
-        it "nests" $ do
-            parse expression "" "f(x)" `shouldBe` Right
-                (Application "f" [Variable "x"])
+    describe "parser" $ do
+        it "recognizes the prelude" $ do
+            fname <- getDataFileName "samples/prelude.uro"
+            input <- readFile fname
+            parse parseDef fname input `shouldSatisfy` isRight
+    describe "command line" $ do
         it "ignores whitespace" $ do
-            parse expression "" "f ( x ) " `shouldBe` Right
-                (Application "f" [Variable "x"])
-            parse expression "" " f(x)" `shouldSatisfy` isLeft
-
-    describe "pattern" $ do
-        it "parses constructor patterns" $ do
-            parse pattern "" "cons(x, xs)" `shouldBe` Right
-                (ConstructorPattern "cons"
-                    [VariablePattern "x", VariablePattern "xs"])
-        it "nests" $ do
-            parse pattern "" "cons(x, cons(y, empty))" `shouldBe` Right
-                (ConstructorPattern "cons" [VariablePattern "x",
-                    (ConstructorPattern "cons"
-                        [VariablePattern "y", VariablePattern "empty"])])
-
-    describe "dataDefinition" $ do
-        it "parses data types" $ do
-            parse dataDefinition "" "data ListOfInt where empty(): ListOfInt"
-                `shouldBe` Right (DataDefinition "ListOfInt"
-                    [Signature "empty" [] "ListOfInt"])
-        it "handles line breaks" $ do
-            parse dataDefinition "" "data ListOfInt where\nempty(): ListOfInt"
-                `shouldBe` Right (DataDefinition "ListOfInt"
-                    [Signature "empty" [] "ListOfInt"])
-        it "handles tabs" $ do
-            parse dataDefinition "" "data ListOfInt where\n\tempty(): ListOfInt"
-                `shouldBe` Right (DataDefinition "ListOfInt"
-                    [Signature "empty" [] "ListOfInt"])
-        it "parses multiple constructors" $ do
-            parse dataDefinition "" "data ListOfInt where \
-                \   empty(): ListOfInt \
-                \   cons(Int, ListOfInt): ListOfInt"
-                `shouldBe` Right (DataDefinition "ListOfInt"
-                    [Signature "empty" [] "ListOfInt",
-                    Signature "cons" ["Int", "ListOfInt"] "ListOfInt"])
-
-    describe "codataDefinition" $ do
-        it "parses codata types" $ do
-            parse codataDefinition "" "codata StreamOfInt where StreamOfInt.head(): Int"
-                `shouldBe` Right (CodataDefinition "StreamOfInt" [Signature "head" [] "Int"])
-        it "rejects hole name mismatches" $ do
-            parse codataDefinition "" "codata StreamOfInt where Bogus.head(): Int"
-                `shouldSatisfy` isLeft
-
-    describe "functionDefinition" $ do
-        it "parses functions" $ do
-            parse functionDefinition "" mapCode `shouldBe` Right mapTree
-        it "recognizes copatterns" $ do
-            parse functionDefinition "" mapStreamCode `shouldSatisfy` isRight
-        it "parses copatterns" $ do
-            parse functionDefinition "" mapStreamCode `shouldBe` Right mapStreamTree
-        it "recognizes nested copatterns" $ do
-            parse functionDefinition "" fibCode `shouldSatisfy` isRight
-        it "rejects hole name mismatches" $ do
-            parse functionDefinition "" "function f(): T where g() = x" `shouldSatisfy` isLeft
-    it "recognizes programs" $ do
-        parse library "" (mapCode ++ "\n" ++ mapStreamCode) `shouldSatisfy` isRight
+            parse parseExp "" "  x  " `shouldBe` Right (PVar "x")
+        it "uses the longest match" $ do
+            parse parseExp "" "x()" `shouldBe` Right (PApp "x" [])
