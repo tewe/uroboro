@@ -55,20 +55,29 @@ pq = choice [des, app] <?> "copattern"
     des = try $ dotNotation PQDes (app <?> "function") pp
     app = liftM PQApp identifier <*> args pp
 
--- |Parse data definition
+-- |Parse "kind name"
+definition :: String -> (String -> a) -> Parser a
+definition kind make = liftM make (reserved kind *> identifier)
+
+-- |Parse "where a..."
+--where1 :: (a -> b) -> Parser a -> Parser [b]
+where1 :: Parser a -> Parser [a]
+where1 a = reserved "where" *> many1 a
+
+-- |Parse data type
 ptpos :: Parser PT
-ptpos = liftM PTPos (reserved "data" *> identifier <* reserved "where")
-    <*> many1 (liftM PTCon identifier <*> parens (commaSep identifier) <*> (colon *> identifier))
+ptpos = definition "data" PTPos <* reserved "where"
+    <*> many1 (liftM PTCon identifier <*> args identifier <*> (colon *> identifier))
 
--- |Parse codata definition
+-- |Parse codata type
 ptneg :: Parser PT
-ptneg = liftM PTNeg (reserved "codata" *> identifier <* reserved "where")
-    <*> many1 (liftM PTDes identifier <*> (dot *> identifier) <*> parens (commaSep identifier) <*> (colon *> identifier))
+ptneg = definition "codata" PTNeg <*> where1 (liftM PTDes identifier
+    <*> (dot *> identifier) <*> args identifier <*> (colon *> identifier))
 
--- |Parse function definition
+-- |Parse function
 ptfun :: Parser PT
-ptfun = liftM PTFun (reserved "function" *> identifier) <*> parens (commaSep identifier) <*> (colon *> identifier <* reserved "where")
-    <*> many1 (liftM PTRule pq <*> (symbol "=" *> pexp))
+ptfun = definition "function" PTFun <*> args identifier <*> (colon *> identifier)
+    <*> where1 (liftM PTRule pq <*> (symbol "=" *> pexp))
 
 -- |Parse whole file
 plib :: Parser [PT]
