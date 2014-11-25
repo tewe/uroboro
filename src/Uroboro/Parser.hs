@@ -30,10 +30,10 @@ dotNotation make a b = liftM fold a <*> (dot *> sepBy1 name dot)
 
 -- |Parse expression
 pexp :: Parser PExp
-pexp = choice [des, app, var] <?> "expression"
+pexp = choice [try des, try app, var] <?> "expression"
   where
-    des = try $ dotNotation PDes (app <|> var <?> "function or variable") pexp
-    app = try $ liftM PApp identifier <*> args pexp
+    des = dotNotation PDes (app <|> var <?> "function or variable") pexp
+    app = liftM PApp identifier <*> args pexp
     var = liftM PVar identifier
 
 -- |Parse exactly one expression
@@ -42,16 +42,16 @@ pmain = whiteSpace *> pexp <* eof
 
 -- |Parse pattern
 pp :: Parser PP
-pp = choice [con, var] <?> "pattern"
+pp = choice [try con, var] <?> "pattern"
   where
-    con = try $ liftM PPCon identifier <*> args pp
+    con = liftM PPCon identifier <*> args pp
     var = liftM PPVar identifier
 
 -- |Parse copattern
 pq :: Parser PQ
-pq = choice [des, app] <?> "copattern"
+pq = choice [try des, app] <?> "copattern"
   where
-    des = try $ dotNotation PQDes (app <?> "function") pp
+    des = dotNotation PQDes (app <?> "function") pp
     app = liftM PQApp identifier <*> args pp
 
 -- |Parse data definition
