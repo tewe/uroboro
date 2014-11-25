@@ -14,10 +14,8 @@ data PTCon = PTCon String [String] String deriving (Eq, Show)
 
 data PTDes = PTDes String String [String] String deriving (Eq, Show)
 
-type PTPos = (String, [PTCon])
+data PTRule = PTRule PQ PExp deriving (Eq, Show)
 
-type PTNeg = (String, [PTDes])
-
-data PSig = PSig String [String] String deriving (Eq, Show)
-
-type PFun = (PSig, [(PQ, PExp)])
+data PT = PTPos String [PTCon]
+        | PTNeg String [PTDes]
+        | PTFun String [String] String [PTRule] deriving (Eq, Show)

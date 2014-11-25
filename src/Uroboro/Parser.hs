@@ -29,15 +29,6 @@ des pz px constructor = do
     sepBy1 (call px) dot >>= return . (foldl make z)
   where make e (name, args) = constructor name args e
 
--- |block start where lines
-def :: String -> Parser a -> Parser b -> Parser (a, [b])
-def block start line = do
-    _ <- reserved block
-    h <- start
-    _ <- reserved "where"
-    l <- many1 line
-    return (h, l)
-
 pvar :: Parser PExp
 pvar = liftM PVar (identifier)
 
@@ -84,22 +75,16 @@ pq = try pqdes
  <?> "copattern"
 
 -- |Parse data definition
-ptpos :: Parser PTPos
-ptpos = def "data" identifier $ liftM (uncurry PTCon) (call identifier)
-    <*> (colon *> identifier)
+ptpos :: Parser PT
+ptpos = liftM PTPos (reserved "data" *> identifier <* reserved "where")
+    <*> many1 (liftM PTCon identifier <*> parens (commaSep identifier) <*> (colon *> identifier))
 
 -- |Parse codata definition
-ptneg :: Parser PTNeg
-ptneg = def "codata" identifier $ liftM PTDes identifier <*> (dot *> identifier)
-    <*> parens (commaSep identifier) <*> (colon *> identifier)
+ptneg :: Parser PT
+ptneg = liftM PTNeg (reserved "codata" *> identifier <* reserved "where")
+    <*> many1 (liftM PTDes identifier <*> (dot *> identifier) <*> parens (commaSep identifier) <*> (colon *> identifier))
 
 -- |Parse function definition
-pfun :: Parser PFun
-pfun = def "function" psig prule
-  where
-    psig = liftM PSig identifier <*> parens (commaSep identifier) <*> (colon *> identifier)
-    prule = do
-        q <- pq
-        _ <- symbol "="
-        e <- pexp
-        return (q, e)
+ptfun :: Parser PT
+ptfun = liftM PTFun (reserved "function" *> identifier) <*> parens (commaSep identifier) <*> (colon *> identifier <* reserved "where")
+    <*> many1 (liftM PTRule pq <*> (symbol "=" *> pexp))
