@@ -83,19 +83,12 @@ pq = try pqdes
  <|> pqapp
  <?> "copattern"
 
--- |Parse constructor definition
-ppos :: Parser PPos
-ppos = liftM (uncurry PPos) (call identifier) <*> (colon *> identifier) -- TODO move into where
-
 -- |Parse data definition
-pdata :: Parser [PPos]
-pdata = def "data" identifier ppos >>= return . snd -- TODO check defined against return type
+ptpos :: Parser PTPos
+ptpos = def "data" identifier $ liftM (uncurry PTCon) (call identifier)
+    <*> (colon *> identifier)
 
--- |Parse destructor definition
-pneg :: Parser PNeg
-pneg = liftM PNeg identifier <*> (dot *> identifier)
+-- |Parse codata definition
+ptneg :: Parser PTNeg
+ptneg = def "codata" identifier $ liftM PTDes identifier <*> (dot *> identifier)
     <*> parens (commaSep identifier) <*> (colon *> identifier)
-
--- |Parse codara definition
-pcodata :: Parser [PNeg]
-pcodata = def "codata" identifier pneg >>= return . snd
