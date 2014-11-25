@@ -1,6 +1,7 @@
 module Uroboro.Parser
     (
       pmain
+    , plib
     ) where
 
 import Control.Applicative ((<*), (<*>), (*>))
@@ -32,7 +33,7 @@ dotNotation make a b = liftM fold a <*> (dot *> sepBy1 name dot)
 pexp :: Parser PExp
 pexp = choice [try des, try app, var] <?> "expression"
   where
-    des = dotNotation PDes (app <|> var <?> "function or variable") pexp
+    des = dotNotation PDes (try app <|> var <?> "function or variable") pexp
     app = liftM PApp identifier <*> args pexp
     var = liftM PVar identifier
 
@@ -68,3 +69,7 @@ ptneg = liftM PTNeg (reserved "codata" *> identifier <* reserved "where")
 ptfun :: Parser PT
 ptfun = liftM PTFun (reserved "function" *> identifier) <*> parens (commaSep identifier) <*> (colon *> identifier <* reserved "where")
     <*> many1 (liftM PTRule pq <*> (symbol "=" *> pexp))
+
+-- |Parse whole file
+plib :: Parser [PT]
+plib = whiteSpace *> many (choice [ptpos, ptneg, ptfun]) <* eof
