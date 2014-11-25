@@ -18,15 +18,17 @@ type Parser = ParsecT String () Identity
 args :: Parser a -> Parser [a]
 args p = parens (commaSep p)
 
-data Pair a = Pair String [a]
+-- |Recursively apply a list of functions
+fold :: a -> [a -> a] -> a
+fold x [] = x
+fold x (f:fs) = f (fold x fs)
 
 -- |z().des(x, ...)
 des :: Parser a -> Parser b -> (String -> [b] -> a -> a) -> Parser a
 des pz px constructor = do
     z <- pz
     _ <- dot
-    sepBy1 (liftM Pair identifier <*> args px) dot >>= return . (foldl make z)
-  where make e (Pair name args) = constructor name args e
+    sepBy1 (liftM constructor identifier <*> args px) dot >>= return . (fold z)
 
 pvar :: Parser PExp
 pvar = liftM PVar (identifier)
@@ -34,9 +36,6 @@ pvar = liftM PVar (identifier)
 -- |app(arg, ...)
 papp :: Parser PExp
 papp = liftM PApp identifier <*> args pexp
-
-makePdes :: PExp -> String -> [PExp] -> PExp
-makePdes from name args = PDes name args from
 
 -- |exp().des(arg, ...)
 pdes :: Parser PExp
