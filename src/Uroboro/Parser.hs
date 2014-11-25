@@ -14,27 +14,29 @@ import Uroboro.Tree
 -- |No user state
 type Parser = ParsecT String () Identity
 
--- |identifier(parser, ...)
-call :: Parser a -> Parser (String, [a])
-call parser = do
-    i <- identifier
-    p <- parens (commaSep parser)
-    return (i, p)
+-- |Parse (parser, ...)
+args :: Parser a -> Parser [a]
+args p = parens (commaSep p)
+
+data Pair a = Pair String [a]
 
 -- |z().des(x, ...)
 des :: Parser a -> Parser b -> (String -> [b] -> a -> a) -> Parser a
 des pz px constructor = do
     z <- pz
     _ <- dot
-    sepBy1 (call px) dot >>= return . (foldl make z)
-  where make e (name, args) = constructor name args e
+    sepBy1 (liftM Pair identifier <*> args px) dot >>= return . (foldl make z)
+  where make e (Pair name args) = constructor name args e
 
 pvar :: Parser PExp
 pvar = liftM PVar (identifier)
 
 -- |app(arg, ...)
 papp :: Parser PExp
-papp = liftM (uncurry PApp) (call pexp)
+papp = liftM PApp identifier <*> args pexp
+
+makePdes :: PExp -> String -> [PExp] -> PExp
+makePdes from name args = PDes name args from
 
 -- |exp().des(arg, ...)
 pdes :: Parser PExp
@@ -58,11 +60,11 @@ pp = try ppcon
  <?> "pattern"
  where
    ppvar = liftM PPVar (identifier)
-   ppcon = liftM (uncurry PPCon) (call pp)
+   ppcon = liftM PPCon identifier <*> args pp
 
 -- |Parse hole that starts a copattern
 pqapp :: Parser PQ
-pqapp = liftM (uncurry PQApp) (call pp)
+pqapp = liftM PQApp identifier <*> args pp
 
 -- |hole().des(arg, ...)
 pqdes :: Parser PQ
