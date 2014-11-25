@@ -9,3 +9,7 @@ data PP = PPVar String
 
 data PQ = PQApp String [PP]
         | PQDes String [PP] PQ deriving (Eq, Show)
+
+data PPos = PPos String [String] String deriving (Eq, Show)
+
+data PNeg = PNeg String String [String] String deriving (Eq, Show)
