@@ -1,21 +1,23 @@
 module Uroboro.Tree where
 
-data PExp = PVar String
-          | PApp String [PExp]
-          | PDes String [PExp] PExp deriving (Eq, Show)
+type Identifier = String
+type Type = Identifier
+data PExp = PVar Identifier
+          | PApp Identifier [PExp]
+          | PDes Identifier [PExp] PExp deriving (Eq, Show)
 
-data PP = PPVar String
-        | PPCon String [PP] deriving (Eq, Show)
+data PP = PPVar Identifier
+        | PPCon Identifier [PP] deriving (Eq, Show)
 
-data PQ = PQApp String [PP]
-        | PQDes String [PP] PQ deriving (Eq, Show)
+data PQ = PQApp Identifier [PP]
+        | PQDes Identifier [PP] PQ deriving (Eq, Show)
 
-data PTCon = PTCon String [String] String deriving (Eq, Show)
+data PTCon = PTCon Identifier [Type] Type deriving (Eq, Show)
 
-data PTDes = PTDes String String [String] String deriving (Eq, Show)
+data PTDes = PTDes Type Identifier [Type] Type deriving (Eq, Show)
 
 data PTRule = PTRule PQ PExp deriving (Eq, Show)
 
-data PT = PTPos String [PTCon]
-        | PTNeg String [PTDes]
-        | PTFun String [String] String [PTRule] deriving (Eq, Show)
+data PT = PTPos Type [PTCon]
+        | PTNeg Type [PTDes]
+        | PTFun Identifier [Type] Type [PTRule] deriving (Eq, Show)
