@@ -3,6 +3,8 @@ module Uroboro.CheckerSpec
       spec
     ) where
 
+import Control.Monad (foldM)
+
 import Test.Hspec
 
 import Uroboro.Parser (parseDef)
@@ -27,6 +29,12 @@ spec = do
                 , "data Int where succ(): Int"
                 ]
             pos xs x `shouldFail` "Shadowed Definition"
-        it "folds" $ do
+        it "passes through" $ do
             x:_ <- parseString parseDef "data Int where zero(): Int"
-            pos [] x `shouldBe` (Right [x])
+            pos [] x `shouldBe` Right [x]
+        it "folds" $ do
+            defs <- parseString parseDef $ unlines
+                [ "data Int where zero(): Int"
+                , "data Int where succ(): Int"
+                ]
+            foldM pos [] defs `shouldFail` "Shadowed Definition"
