@@ -2,27 +2,61 @@ module Uroboro.Interpreter where
 
 import Control.Monad (zipWithM)
 
-import Uroboro.Abstract
-import Uroboro.Checker (etype)
+type Identifier = String
+type Type = Identifier
 
-pmatch :: TP -> TExp -> Maybe [(String, TExp)]
-pmatch (TPVar name type_) exp | type_ == etype exp = return [(name, exp)]
-pmatch (TPCons name patterns returnType) (TCon name' exps returnType') | name == name' && length patterns == length exps && returnType == returnType' = do
-    substitutions <- zipWithM pmatch patterns exps
-    return $ concat substitutions
-pmatch _ _ = Nothing
+data T = TVar Type Identifier
+       | TApp Type Identifier [T]
+       | TCon Type Identifier [T]
+       | TDes Type Identifier [T] T deriving (Show, Eq)
 
--- |Only normal form will match
-qmatch :: TQ -> TExp -> Maybe [(String, TExp)]
-qmatch (TQApp name patterns returnType) (TApp name' exps returnType') | name == name' && length patterns == length exps && returnType == returnType' = do
-    substitutions <- zipWithM pmatch patterns exps
-    return $ concat substitutions
-qmatch (TQDes pattern name patterns returnType) (TDes name' exp exps returnType') | name == name' && length patterns == length exps && returnType == returnType' = do
-    substitution <- qmatch pattern exp
-    substitutions <- zipWithM pmatch patterns exps
-    return $ substitution ++ (concat substitutions)
-qmatch _ _ = Nothing
+data P = PVar Type Identifier
+       | PCon Type Identifier [P] deriving (Show, Eq)
 
-eval :: TRules -> [(String, TExp)] -> TExp -> Either String TExp -- TODO no either but throw error
-eval _ context (TVar x _) = maybe (Left "sure you type-checked?") return $ lookup x context
---eval rules substitution (TApp name args returnType) =
+data Q = QApp Type [P]
+       | QDes Type Identifier [P] Q deriving (Show, Eq)
+
+type Rule = (Q, T)
+type Rules = [(Identifier, [Rule])]
+
+type Signature = ([Type], Type)
+type Sigma = [(Identifier, Signature)]
+
+data E = EApp Type [T]
+       | EDes Type Identifier [T] E deriving (Show, Eq)
+
+type Substitution = [(Identifier, T)]
+
+-- |Pattern matching
+pmatch :: T -> P -> Either String Substitution
+pmatch (TVar _ _) _          = error "Substitute variables before trying to match"
+pmatch term (PVar r x)
+    | returnType term /= r   = Left "Type Mismatch"
+    | otherwise              = return [(x, term)]
+  where
+    returnType (TVar t _)     = t
+    returnType (TApp t _ _)   = t
+    returnType (TCon t _ _)   = t
+    returnType (TDes t _ _ _) = t
+pmatch (TCon r c ts) (PCon r' c' ps)
+    | r /= r'                = Left "Type Mismatch"
+    | c /= c'                = Left "Name Mismatch"
+    | length ts /= length ps = Left "Argument Length Mismatch"
+    | otherwise              = zipWithM pmatch ts ps >>= return . concat
+pmatch _ _                   = Left "Not Comparable"
+
+-- |Copattern matching
+qmatch :: E -> Q -> Either String Substitution
+qmatch (EApp r as) (QApp r' ps)
+    | r /= r'                = error "Type checker guarantees hole type"
+    | length as /= length ps = Left "Argument Length Mismatch"
+    | otherwise              = zipWithM pmatch as ps >>= return . concat -- TODO disjoint
+qmatch (EDes r d as inner) (QDes r' d' ps inner')
+    | r /= r'                = Left "Type Mismatch"
+    | d /= d'                = Left "Name Mismatch"
+    | length as /= length ps = Left "Argument Length Mismatch"
+    | otherwise              = do
+        is <- qmatch inner inner'
+        ss <- zipWithM pmatch as ps
+        return $ is ++ (concat ss)
+qmatch _ _                   = Left "Not Comparable"
