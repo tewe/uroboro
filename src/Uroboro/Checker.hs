@@ -4,6 +4,8 @@ import Data.List (find, intercalate)
 
 import Uroboro.Tree
 
+type Context = [(Identifier, Type)]
+
 -- |Fold over positive type definitions
 pos :: [PT] -> PT -> Either String [PT]
 pos defs def@(PTPos t constructors)
@@ -43,3 +45,19 @@ neg defs def@(PTNeg t destructors)
     args = foldl desArgTypes [] destructors
     argString = intercalate ", " args
 neg _ _ = return []
+
+-- |Infer a term's type
+expInfer :: [PT] -> Context -> PExp -> Either String TExp
+expInfer _ vars (PVar name) = case lookup name vars of
+    Just t  -> return (TVar t name)
+    Nothing -> Left $ "Unknown Variable: " ++ name ++ " isn't bound"
+expInfer defs vars (PApp name args) = Left "TODO"
+expInfer defs vars (PDes name args inner) = do
+    fromType <- expInfer defs vars inner
+    Left "TODO"
+
+-- |Typecheck a term
+exp :: [PT] -> Context -> PExp -> Type -> Either String TExp
+exp defs vars (PVar name) returnType = Left "TODO"
+exp defs vars (PApp name args) returnType = Left "TODO"
+exp defs vars (PDes name args inner) returnType = Left "TODO"
