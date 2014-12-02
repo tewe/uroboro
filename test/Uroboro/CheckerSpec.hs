@@ -38,3 +38,10 @@ spec = do
                 , "data Int where succ(): Int"
                 ]
             foldM pos [] defs `shouldFail` "Shadowed Definition"
+    describe "neg" $ do
+        it "prevents duplicates" $ do
+            defs <- parseString parseDef $ unlines
+                [ "codata StreamOfInt where StreamOfInt.head(): Int"
+                , "codata StreamOfInt where StreamOfInt.head(): Int"
+                ]
+            foldM neg [] defs `shouldFail` "Shadowed Definition"

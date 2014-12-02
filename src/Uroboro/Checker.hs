@@ -1,10 +1,10 @@
 module Uroboro.Checker where
 
-import Data.List (find)
+import Data.List (find, intercalate)
 
 import Uroboro.Tree
 
--- |For foldlM
+-- |Fold over positive type definitions
 pos :: [PT] -> PT -> Either String [PT]
 pos defs def@(PTPos t constructors)
     | find (mismatch t) constructors /= Nothing = Left $
@@ -19,3 +19,27 @@ pos defs def@(PTPos t constructors)
 
     mismatch name (PTCon _ _ n) = name /= n
 pos _ _ = return []
+
+-- |Fold to get defined types
+types :: [Type] -> PT -> [Type]
+types ts (PTPos t _) = (t:ts)
+types ts (PTNeg t _) = (t:ts)
+types ts (PTFun _ _ _ _) = ts
+
+-- |Fold to get argument types
+desArgTypes :: [Type] -> PTDes -> [Type]
+desArgTypes ts (PTDes _ _ args _) = ts ++ args
+
+-- |Fold over negative type definitions
+neg :: [PT] -> PT -> Either String [PT]
+neg defs def@(PTNeg t destructors)
+    | t `elem` defined = Left $
+        "Shadowed Definition: " ++ t ++ " is defined more than once"
+    | any (flip notElem defined) args = Left $
+        "Missing Definition: " ++ argString ++ " are not all defined"
+    | otherwise = Right (def:defs)
+  where
+    defined = foldl types [t] defs
+    args = foldl desArgTypes [] destructors
+    argString = intercalate ", " args
+neg _ _ = return []
