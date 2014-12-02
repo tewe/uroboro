@@ -40,8 +40,9 @@ spec = do
             foldM pos [] defs `shouldFail` "Shadowed Definition"
     describe "neg" $ do
         it "prevents duplicates" $ do
-            defs <- parseString parseDef $ unlines
-                [ "codata StreamOfInt where StreamOfInt.head(): Int"
-                , "codata StreamOfInt where StreamOfInt.head(): Int"
-                ]
+            let stream = "codata StreamOfInt where StreamOfInt.head(): Int"
+            defs <- parseString parseDef $ unlines [stream, stream]
             foldM neg [] defs `shouldFail` "Shadowed Definition"
+        it "checks argument types" $ do
+            x:_ <- parseString parseDef "codata IntToInt where IntToInt.apply(Int): Int"
+            neg [] x `shouldFail` "Missing Definition"

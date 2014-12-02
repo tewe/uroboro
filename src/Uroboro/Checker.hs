@@ -35,11 +35,11 @@ neg :: [PT] -> PT -> Either String [PT]
 neg defs def@(PTNeg t destructors)
     | t `elem` defined = Left $
         "Shadowed Definition: " ++ t ++ " is defined more than once"
-    | any (flip notElem defined) args = Left $
+    | any (flip notElem (t:defined)) args = Left $
         "Missing Definition: " ++ argString ++ " are not all defined"
     | otherwise = Right (def:defs)
   where
-    defined = foldl types [t] defs
+    defined = foldl types [] defs
     args = foldl desArgTypes [] destructors
     argString = intercalate ", " args
 neg _ _ = return []
