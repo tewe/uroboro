@@ -33,11 +33,11 @@ desArgTypes ts (PTDes _ _ args _) = ts ++ args
 -- |Fold over negative type definitions
 neg :: [PT] -> PT -> Either String [PT]
 neg defs def@(PTNeg t destructors)
-    | t `elem` defined = Left $
+    | t `elem` defined                    = Left $
         "Shadowed Definition: " ++ t ++ " is defined more than once"
     | any (flip notElem (t:defined)) args = Left $
         "Missing Definition: " ++ argString ++ " are not all defined"
-    | otherwise = Right (def:defs)
+    | otherwise                           = Right (def:defs)
   where
     defined = foldl types [] defs
     args = foldl desArgTypes [] destructors
