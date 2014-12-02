@@ -25,6 +25,20 @@ data PT = PTPos Type [PTCon]
         | PTNeg Type [PTDes]
         | PTFun Identifier [Type] Type [PTRule] deriving (Eq, Show)
 
+{- Syntax Tree -}
+
+data SFun = SFun Identifier [Type] Type deriving (Eq, Show)
+
+type Signature = ([Type], Type)
+
+type Sigma = [(Identifier, Signature)]
+
+type Rule = (PQ, PExp)
+
+type Rules = [(Identifier, [Rule])]
+
+type SLib = ([PTCon], [PTDes], [SFun], [(PQ, PExp)])
+
 {- Typed Syntax Tree -}
 
 data TExp = TVar Type Identifier
