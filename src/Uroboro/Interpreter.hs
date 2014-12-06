@@ -45,7 +45,7 @@ pmatch (TCon r c ts) (PCon r' c' ps)
     | otherwise              = zipWithM pmatch ts ps >>= return . concat
 pmatch _ _                   = Left "Not Comparable"
 
--- |Copattern matching
+-- |Copattern matching (inside-out?)
 qmatch :: E -> Q -> Either String Substitution
 qmatch (EApp r as) (QApp r' ps)
     | r /= r'                = error "Type checker guarantees hole type"
@@ -60,3 +60,43 @@ qmatch (EDes r d as inner) (QDes r' d' ps inner')
         ss <- zipWithM pmatch as ps
         return $ is ++ (concat ss)
 qmatch _ _                   = Left "Not Comparable"
+
+-- |Substitute
+subst :: T -> (Identifier, T) -> T
+subst t@(TVar _ n') (n, term)
+    | n == n'               = term
+    | otherwise             = t
+subst (TApp t n as) s       = TApp t n $ map (flip subst s) as
+subst (TCon t n as) s       = TCon t n $ map (flip subst s) as
+subst (TDes t n as inner) s = TDes t n (map (flip subst s) as) (subst inner s)
+
+-- |Contraction
+contract :: E -> Rule -> Either String T
+contract context (pattern, term) = do
+    s <- qmatch context pattern
+    return $ foldl subst term s
+
+-- | Tag the 'Nothing' value of a 'Maybe'
+-- http://hackage.haskell.org/package/errors-1.2.1/docs/src/Control-Error-Util.html#note
+note :: a -> Maybe b -> Either a b
+note a m = case m of
+    Nothing -> Left  a
+    Just b  -> Right b
+
+-- |Find hole
+reducible :: T -> Either String (E, Identifier)
+reducible (TApp r f args) = return (EApp r args, f)
+reducible (TDes r d args inner) = do
+    (inner', f) <- reducible inner
+    return (EDes r d args inner', f)
+reducible t = Left $ "Not a redex: " ++ show t
+
+-- |One step reduction
+reduce :: Rules -> T -> Either String T
+reduce rules term = do
+    (context, f) <- reducible term
+    rulesf <- note ("Missing Definition: " ++ f) $ lookup f rules
+    ts <- mapM (contract context) rulesf
+    case ts of
+        [t'] -> return t'
+        _ -> Left $ "Multiple Matches: " ++ show term
