@@ -1,50 +1,64 @@
 module Uroboro.Checker where
 
-import Data.List (find, intercalate)
+import Control.Monad (foldM)
+import Data.List (find, intercalate, (\\))
 
 import Uroboro.Tree
 
+data PTSig = PTSig Identifier [Type] Type deriving (Eq, Show)
+
+data Program = Program {
+      typeNames    :: [Type]  -- Cache types from constructors and destructors.
+    , constructors :: [PTCon]
+    , destructors  :: [PTDes]
+    , functions    :: [PTSig] -- Always update functions and rules together.
+    , rules        :: Rules
+    }
+
+emptyProgram :: Program
+emptyProgram = Program [] [] [] [] []
+
 type Context = [(Identifier, Type)]
 
--- |Fold over positive type definitions
-pos :: [PT] -> PT -> Either String [PT]
-pos defs def@(PTPos t constructors)
-    | find (mismatch t) constructors /= Nothing = Left $
-        "Definition Mismatch: " ++ t ++ " is not returned by all of its constructors"
-    | find (existing t) defs /= Nothing         = Left $
-        "Shadowed Definition: " ++ t ++ " is defined more than once"
-    | otherwise                                 = Right (def:defs)
+inferPExp :: Program -> Context -> PExp -> Either String TExp
+inferPExp _ context (PVar name) = case lookup name context of
+    Nothing  -> Left "Unbound Variable"
+    Just typ -> Right (TVar typ name)
+inferPExp p _ (PApp name _) = Left "TODO"
+inferPExp _ _ (PDes _ _ _) = Left "TODO"
+
+-- |Fold over type definitions.
+checkPT :: Program -> PT -> Either String Program
+checkPT prog@(Program names cons _ _ _) (PTPos name cons')
+    | name `elem` names  = Left "Shadowed Definition"
+    | any mismatch cons' = Left "Definition Mismatch"
+    | any missing cons'  = Left "Missing Definition"
+    | otherwise          = Right prog {
+          typeNames = (name:names)
+        , constructors = cons ++ cons'
+        }
   where
-    existing name (PTPos n _) = name == n
-    existing name (PTNeg n _) = name == n
-    existing _ _ = False
-
-    mismatch name (PTCon _ _ n) = name /= n
-pos _ _ = return []
-
--- |Fold to get defined types
-types :: [Type] -> PT -> [Type]
-types ts (PTPos t _) = (t:ts)
-types ts (PTNeg t _) = (t:ts)
-types ts (PTFun _ _ _ _) = ts
-
--- |Fold to get argument types
-desArgTypes :: [Type] -> PTDes -> [Type]
-desArgTypes ts (PTDes _ _ args _) = ts ++ args
-
--- |Fold over negative type definitions
-neg :: [PT] -> PT -> Either String [PT]
-neg defs def@(PTNeg t destructors)
-    | t `elem` defined                    = Left $
-        "Shadowed Definition: " ++ t ++ " is defined more than once"
-    | any (flip notElem (t:defined)) args = Left $
-        "Missing Definition: " ++ argString ++ " are not all defined"
-    | otherwise                           = Right (def:defs)
+    mismatch (PTCon _ _ returnType) = returnType /= name
+    missing (PTCon _ args _)        = args \\ (name:names) /= []
+checkPT prog@(Program names _ des _ _) (PTNeg name des')
+    | name `elem` names = Left "Shadowed Definition"
+    | any mismatch des' = Left "Definition Mismatch"
+    | any missing des'  = Left "Missing Definition"
+    | otherwise         = Right prog {
+          typeNames = (name:names)
+        , destructors = des ++ des'
+        }
   where
-    defined = foldl types [] defs
-    args = foldl desArgTypes [] destructors
-    argString = intercalate ", " args
-neg _ _ = return []
+    mismatch (PTDes _ _ _ innerType) = innerType /= name
+    missing (PTDes _ _ args _)       = args \\ (name:names) /= []
+checkPT prog@(Program names _ _ funs rules) (PTFun name args t rules')
+    | any clash rules     = Left "Shadowed Definition"
+  where
+    clash (name', _) = name' == name
+
+-- |Turn parser output into interpreter input.
+typecheck :: [PT] -> Either String Rules
+typecheck defs = foldM checkPT emptyProgram defs >>= return . rules
 
 -- |Infer a term's type
 expInfer :: [PT] -> Context -> PExp -> Either String TExp

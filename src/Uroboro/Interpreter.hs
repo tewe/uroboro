@@ -19,8 +19,8 @@ data Q = QApp Type [P]
 type Rule = (Q, T)
 type Rules = [(Identifier, [Rule])]
 
-type Signature = ([Type], Type)
-type Sigma = [(Identifier, Signature)]
+--type Signature = ([Type], Type)
+--type Sigma = [(Identifier, Signature)]
 
 data E = EApp Type [T]
        | EDes Type Identifier [T] E deriving (Show, Eq)
