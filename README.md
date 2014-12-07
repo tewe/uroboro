@@ -18,3 +18,6 @@ An Implementation of a Language with Pattern and Copattern Matching
 	ghci test/Spec.hs
 	:main
 	:reload
+
+	ghci -Wall test/Uroboro/ParserSpec.hs
+	hspec spec
