@@ -60,12 +60,15 @@ pq = choice [des, app] <?> "copattern"
 parseDef :: Parser [PT]
 parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
   where
-    pos = definition "data" PTPos <* reserved "where"
-      <*> many1 (liftM PTCon identifier <*> args identifier <*> (colon *> identifier))
-    neg = definition "codata" PTNeg <*> where1 (liftM PTDes identifier
-      <*> (dot *> identifier) <*> args identifier <*> (colon *> identifier))
-    fun = definition "function" PTFun <*> args identifier <*> (colon *> identifier)
-      <*> where1 (liftM PTRule pq <*> (symbol "=" *> pexp))
+    pos = definition "data" PTPos <*> where1 con
+    neg = definition "codata" PTNeg <*> where1 des
+    fun = definition "function" PTFun <*>
+        args identifier <*> (colon *> identifier) <*> where1 rul
+
+    con = liftM PTCon identifier <*> args identifier <*> (colon *> identifier)
+    des = liftM PTDes identifier <*>
+        (dot *> identifier) <*> args identifier <*> (colon *> identifier)
+    rul = liftM PTRule pq <*> (symbol "=" *> pexp)
 
     definition :: String -> (String -> a) -> Parser a
     definition kind make = liftM make (reserved kind *> identifier)
