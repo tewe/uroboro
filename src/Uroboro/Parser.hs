@@ -63,18 +63,22 @@ parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
     pos = definition "data" PTPos <*> where1 con
     neg = definition "codata" PTNeg <*> where1 des
     fun = definition "function" PTFun <*>
-        args identifier <*> (colon *> identifier) <*> where1 rul
+        args typ <*> (colon *> typ) <*> where1 rul
 
-    con = liftM (flip3 PTCon) identifier <*> args identifier <*> (colon *> identifier)
-    des = liftM (flip4 PTDes) identifier <*>
-        (dot *> identifier) <*> args identifier <*> (colon *> identifier)
+    con = liftM (flip3 PTCon) identifier <*> args typ <*> (colon *> typ)
+    des = liftM (flip4 PTDes) typ <*>
+        (dot *> identifier) <*> args typ <*> (colon *> typ)
     rul = liftM PTRule pq <*> (symbol "=" *> pexp)
+
+    -- |For readability.
+    typ :: Parser Type
+    typ = identifier
 
     flip3 f a b c   = f c a b
     flip4 f a b c d = f d b c a
 
     definition :: String -> (String -> a) -> Parser a
-    definition kind make = liftM make (reserved kind *> identifier)
+    definition kind make = liftM make (reserved kind *> typ)
 
     where1 :: Parser a -> Parser [a]
     where1 a = reserved "where" *> many1 a
