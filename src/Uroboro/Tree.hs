@@ -15,8 +15,9 @@ data PP = PPVar Identifier
 data PQ = PQApp Identifier [PP]
         | PQDes Identifier [PP] PQ deriving (Eq, Show)
 
-data PTCon = PTCon Identifier [Type] Type deriving (Eq, Show)
+data PTCon = PTCon Type Identifier [Type] deriving (Eq, Show)
 
+-- |PTDes returnType name args innerType.
 data PTDes = PTDes Type Identifier [Type] Type deriving (Eq, Show)
 
 data PTRule = PTRule PQ PExp deriving (Eq, Show)

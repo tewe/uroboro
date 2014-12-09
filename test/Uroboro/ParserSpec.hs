@@ -21,6 +21,14 @@ spec = do
             fname <- getDataFileName "samples/prelude.uro"
             input <- readFile fname
             parse parseDef fname input `shouldSatisfy` isRight
+        it "observes argument order (constructor)" $ do
+            let source = "data Int where zero(): Int"
+            let parsed = PTPos "Int" [PTCon "Int" "zero" []]
+            parse parseDef "" source `shouldBe` Right [parsed]
+        it "observes argument order (destructor)" $ do
+            let source = "codata StreamOfInt where StreamOfInt.head(): Int"
+            let parsed = PTNeg "StreamOfInt" [PTDes "Int" "head" [] "StreamOfInt"]
+            parse parseDef "" source `shouldBe` Right [parsed]
     describe "command line" $ do
         it "ignores whitespace" $ do
             parse parseExp "" "  x  " `shouldBe` Right (PVar "x")

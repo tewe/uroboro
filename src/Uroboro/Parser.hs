@@ -65,10 +65,13 @@ parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
     fun = definition "function" PTFun <*>
         args identifier <*> (colon *> identifier) <*> where1 rul
 
-    con = liftM PTCon identifier <*> args identifier <*> (colon *> identifier)
-    des = liftM PTDes identifier <*>
+    con = liftM (flip3 PTCon) identifier <*> args identifier <*> (colon *> identifier)
+    des = liftM (flip4 PTDes) identifier <*>
         (dot *> identifier) <*> args identifier <*> (colon *> identifier)
     rul = liftM PTRule pq <*> (symbol "=" *> pexp)
+
+    flip3 f a b c   = f c a b
+    flip4 f a b c d = f d b c a
 
     definition :: String -> (String -> a) -> Parser a
     definition kind make = liftM make (reserved kind *> identifier)
