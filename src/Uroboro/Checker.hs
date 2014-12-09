@@ -13,7 +13,7 @@ data Program = Program {
     , destructors  :: [PTDes]
     , functions    :: [PTSig] -- Always update functions and rules together.
     , rules        :: Rules
-    }
+    } deriving (Eq, Show)
 
 emptyProgram :: Program
 emptyProgram = Program [] [] [] [] []

@@ -4,6 +4,7 @@ module Uroboro.CheckerSpec
     ) where
 
 import Control.Monad (foldM)
+import Data.Either (isRight)
 
 import Test.Hspec
 
@@ -22,30 +23,24 @@ spec = do
     describe "pos" $ do
         it "checks return types" $ do
             x:_ <- parseString parseDef "data Int where zero(): Float"
-            pos [] x `shouldFail` "Definition Mismatch"
+            checkPT emptyProgram x `shouldFail` "Definition Mismatch"
         it "prevents duplicates" $ do
-            x:xs <- parseString parseDef $ unlines
-                [ "data Int where zero(): Int"
-                , "data Int where succ(): Int"
-                ]
-            pos xs x `shouldFail` "Shadowed Definition"
-        it "passes through" $ do
-            x:_ <- parseString parseDef "data Int where zero(): Int"
-            pos [] x `shouldBe` Right [x]
-        it "folds" $ do
             defs <- parseString parseDef $ unlines
                 [ "data Int where zero(): Int"
                 , "data Int where succ(): Int"
                 ]
-            foldM pos [] defs `shouldFail` "Shadowed Definition"
+            foldM checkPT emptyProgram defs `shouldFail` "Shadowed Definition"
+        it "allows data types" $ do
+            x:_ <- parseString parseDef "data Int where zero(): Int"
+            checkPT emptyProgram x `shouldSatisfy` isRight
     describe "neg" $ do
         let stream = "codata StreamOfInt where StreamOfInt.head(): Int"
         it "prevents duplicates" $ do
             defs <- parseString parseDef $ unlines [stream, stream]
-            foldM neg [] defs `shouldFail` "Shadowed Definition"
+            foldM checkPT emptyProgram defs `shouldFail` "Shadowed Definition"
         it "checks argument types" $ do
             x:_ <- parseString parseDef "codata IntToInt where IntToInt.apply(Int): Int"
-            neg [] x `shouldFail` "Missing Definition"
-        it "passes through" $ do
+            checkPT emptyProgram x `shouldFail` "Missing Definition"
+        it "allows codata types" $ do
             x:_ <- parseString parseDef stream
-            neg [] x `shouldBe` Right [x]
+            checkPT emptyProgram x `shouldSatisfy` isRight
