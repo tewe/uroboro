@@ -1,10 +1,12 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Uroboro.ParserSpec
     (
       spec
     ) where
 
 import Data.Either (isRight)
-import Text.Parsec (parse)
+import Text.Parsec (parse, ParseError)
 
 import Test.Hspec
 
@@ -12,7 +14,9 @@ import Uroboro.Parser
 import Uroboro.Tree
 
 import Paths_uroboro
-import Utils()
+
+instance Eq ParseError where
+    _ == _ = False
 
 spec :: Spec
 spec = do
