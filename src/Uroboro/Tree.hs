@@ -1,7 +1,7 @@
 module Uroboro.Tree where
 
 type Identifier = String
-type Type = Identifier
+newtype Type = Type Identifier deriving (Eq, Show)
 
 {- Parse Tree -}
 

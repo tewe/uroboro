@@ -17,17 +17,19 @@ import Utils()
 spec :: Spec
 spec = do
     describe "parser" $ do
+        let int = Type "Int"
         it "recognizes the prelude" $ do
             fname <- getDataFileName "samples/prelude.uro"
             input <- readFile fname
             parse parseDef fname input `shouldSatisfy` isRight
         it "observes argument order (constructor)" $ do
             let source = "data Int where zero(): Int"
-            let parsed = PTPos "Int" [PTCon "Int" "zero" []]
+            let parsed = PTPos int [PTCon int "zero" []]
             parse parseDef "" source `shouldBe` Right [parsed]
         it "observes argument order (destructor)" $ do
+            let stream = Type "StreamOfInt"
             let source = "codata StreamOfInt where StreamOfInt.head(): Int"
-            let parsed = PTNeg "StreamOfInt" [PTDes "Int" "head" [] "StreamOfInt"]
+            let parsed = PTNeg stream [PTDes int "head" [] stream]
             parse parseDef "" source `shouldBe` Right [parsed]
     describe "command line" $ do
         it "ignores whitespace" $ do
