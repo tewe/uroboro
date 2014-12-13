@@ -7,14 +7,13 @@ module Uroboro.Parser
 
 import Control.Applicative ((<*), (<*>), (*>))
 import Control.Monad (liftM)
-import Control.Monad.Identity (Identity)
 import Text.Parsec
 
 import Uroboro.Token
 import Uroboro.Tree
 
 -- |Parser without user state
-type Parser = ParsecT String () Identity
+type Parser = Parsec String ()
 
 -- |Parse "(p, ...)"
 args :: Parser a -> Parser [a]
