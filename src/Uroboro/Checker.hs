@@ -1,7 +1,7 @@
 module Uroboro.Checker where
 
 import Control.Monad (foldM, zipWithM)
-import Data.List (find, (\\))
+import Data.List (find, (\\), nub)
 
 import Uroboro.Tree
 
@@ -75,6 +75,9 @@ inferPExp p c (PDes name args inner) = do
 
     match t' (PTDes _ n _ t) = n == name && t == t'
 
+typeName :: Type -> Identifier
+typeName (Type n) = n
+
 -- |Fold over type definitions.
 checkPT :: Program -> PT -> Either String Program
 checkPT prog@(Program names cons _ _ _) (PTPos name cons')
@@ -91,14 +94,15 @@ checkPT prog@(Program names cons _ _ _) (PTPos name cons')
 checkPT prog@(Program names _ des _ _) (PTNeg name des')
     | name `elem` names = Left "Shadowed Definition"
     | any mismatch des' = Left "Definition Mismatch"
-    | any missing des'  = Left "Missing Definition"
+    | any missing des'  = Left $ "Missing Definition: " ++ typeName name ++
+        " has a destructor with an unknown argument type"
     | otherwise         = Right prog {
           typeNames = (name:names)
         , destructors = des ++ des'
         }
   where
     mismatch (PTDes _ _ _ innerType) = innerType /= name
-    missing (PTDes _ _ args _)       = args \\ (name:names) /= []
+    missing (PTDes _ _ args _)       = (nub args) \\ (name:names) /= []
 checkPT p@(Program _ _ _ _ rs) (PTFun name _ _ _)
     | any clash rs     = Left "Shadowed Definition"
     | otherwise = return p  -- TODO
