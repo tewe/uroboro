@@ -7,10 +7,34 @@ import Control.Monad (foldM)
 import Data.Either (isRight)
 
 import Test.Hspec
+import Text.Parsec (parse)
 
-import Uroboro.Parser (parseDef)
+import Paths_uroboro
+import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Checker
-import Utils (parseString)
+import Uroboro.Tree
+
+import Utils
+
+prelude :: IO Program
+prelude = do
+    fname <- getDataFileName "samples/prelude.uro"
+    input <- readFile fname
+    case parse parseDef fname input of
+        Left _ -> fail "Parser"
+        Right defs -> case foldM checkPT emptyProgram defs of
+            Left _ -> fail "Checker"
+            Right p -> return p
+
+-- |Context using prelude
+c :: Context
+c = [
+      ("i", Type "Int")
+    , ("f", Type "IntToInt")
+    , ("g", Type "TwoIntToInt")
+    , ("l", Type "ListOfInt")
+    , ("s", Type "StreamOfInt")
+    ]
 
 -- |Assert error message
 shouldFail :: Show a => Either String a -> String -> Expectation
@@ -44,3 +68,15 @@ spec = do
         it "allows codata types" $ do
             x:_ <- parseString parseDef stream
             checkPT emptyProgram x `shouldSatisfy` isRight
+    describe "checkPExp" $ do
+        it "infers construction" $ do
+            p <- prelude
+            e <- parseString parseExp "empty()"
+            let t = (Type "ListOfInt")
+            checkPExp p [] e t `shouldBe` Right (TCon t "empty" [])
+        it "infers applications" $ do
+            p <- prelude
+            e <- parseString parseExp "map(f, l)"
+            let t = (Type "ListOfInt")
+            checkPExp p c e t `shouldBe` Right (TApp t "map"
+                [TVar (Type "IntToInt") "f", TVar t "l"])
