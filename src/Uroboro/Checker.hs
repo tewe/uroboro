@@ -61,9 +61,11 @@ inferPExp p c (PApp name args) = case lookup name (functions p) of  -- TODO catc
     match (PTCon _ n _) = n == name
 inferPExp p c (PDes name args inner) = do
     tinner <- inferPExp p c inner
-    (argTypes, returnType) <- nu p (texpReturnType tinner) name
-    targs <- zipWithM (checkPExp p c) args argTypes
-    return $ TDes returnType name targs tinner
+    case find (match (texpReturnType tinner)) (destructors p) of
+        Nothing -> Left "Missing Definition"
+        Just (PTDes returnType _ argTypes _) -> do
+            targs <- zipWithM (checkPExp p c) args argTypes
+            return $ TDes returnType name targs tinner
   where
     texpReturnType :: TExp -> Type
     texpReturnType (TVar t _) = t
@@ -71,13 +73,7 @@ inferPExp p c (PDes name args inner) = do
     texpReturnType (TCon t _ _) = t
     texpReturnType (TDes t _ _ _) = t
 
-    -- |Look up signature of named destructor for type
-    nu :: Program -> Type -> Identifier -> Either String ([Type], Type)
-    nu p innerType name = case find match (destructors p) of
-        Just (PTDes returnType _ argTypes _) -> return (argTypes, returnType)
-        Nothing -> Left "Missing Definition"
-      where
-        match (PTDes _ n _ t) = n == name && t == innerType
+    match t' (PTDes _ n _ t) = n == name && t == t'
 
 -- |Fold over type definitions.
 checkPT :: Program -> PT -> Either String Program
