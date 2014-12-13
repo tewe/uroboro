@@ -26,7 +26,7 @@ source-repository head
   location: git://github.com/tewe/uroboro.git
 
 library
-  exposed-modules:     Uroboro.Language, Uroboro.Parser, Uroboro.Syntax, Uroboro.Checker, Uroboro.Exception, Uroboro.Abstract
+  exposed-modules:     Uroboro.Language, Uroboro.Parser, Uroboro.Syntax, Uroboro.Checker, Uroboro.Exception, Uroboro.Abstract, Uroboro.Token, Uroboro.Interpreter, Uroboro.Tree
   other-modules:       Paths_uroboro
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8, parsec >=3.1 && <3.2
