@@ -28,7 +28,28 @@ texpReturnType (TDes t _ _ _) = t
 
 -- |Typecheck a term
 checkPExp :: Program -> Context -> PExp -> Type -> Either String TExp
-checkPExp p c e t = Left "TODO"
+checkPExp _ c (PVar n) t = case lookup n c of
+    Just t' | t' == t   -> return (TVar t n)
+            | otherwise -> Left "Type Mismatch"
+    Nothing             -> Left "Unbound Variable"
+checkPExp p c (PApp name args) t = case lookup name (functions p) of
+    Just (argTypes, returnType) | returnType == t ->
+                zipWithM (checkPExp p c) args argTypes >>= return . TApp returnType name
+        | otherwise -> Left "Type Mismatch"
+    Nothing -> case find match (constructors p) of
+        Just (PTCon _ _ argTypes) ->
+            zipWithM (checkPExp p c) args argTypes >>= return . TCon t name
+        Nothing -> Left "Missing Definition"
+  where
+    match (PTCon returnType n _) = n == name && returnType == t
+checkPExp p c (PDes name args inner) t = case find match (destructors p) of
+    Nothing -> Left "Missing Definition"
+    Just (PTDes _ _ argTypes innerType) -> do
+        tinner <- checkPExp p c inner innerType
+        targs <- zipWithM (checkPExp p c) args argTypes
+        return $ TDes t name targs tinner
+  where
+    match (PTDes returnType n _ _) = n == name && returnType == t
 
 -- |Infer a term's type
 inferPExp :: Program -> Context -> PExp -> Either String TExp
