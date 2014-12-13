@@ -1,7 +1,7 @@
 module Uroboro.Checker where
 
 import Control.Monad (foldM, zipWithM)
-import Data.List (find, intercalate, (\\))
+import Data.List (find, (\\))
 
 import Uroboro.Tree
 
@@ -19,12 +19,6 @@ emptyProgram :: Program
 emptyProgram = Program [] [] [] [] []
 
 type Context = [(Identifier, Type)]
-
-texpReturnType :: TExp -> Type
-texpReturnType (TVar t _) = t
-texpReturnType (TApp t _ _) = t
-texpReturnType (TCon t _ _) = t
-texpReturnType (TDes t _ _ _) = t
 
 -- |Typecheck a term
 checkPExp :: Program -> Context -> PExp -> Type -> Either String TExp
@@ -71,6 +65,12 @@ inferPExp p c (PDes name args inner) = do
     targs <- zipWithM (checkPExp p c) args argTypes
     return $ TDes returnType name targs tinner
   where
+    texpReturnType :: TExp -> Type
+    texpReturnType (TVar t _) = t
+    texpReturnType (TApp t _ _) = t
+    texpReturnType (TCon t _ _) = t
+    texpReturnType (TDes t _ _ _) = t
+
     -- |Look up signature of named destructor for type
     nu :: Program -> Type -> Identifier -> Either String ([Type], Type)
     nu p innerType name = case find match (destructors p) of

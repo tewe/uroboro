@@ -20,7 +20,7 @@ Right  x `shouldFail` prefix = expectationFailure
 
 spec :: Spec
 spec = do
-    describe "pos" $ do
+    describe "checkPT (data)" $ do
         it "checks return types" $ do
             x:_ <- parseString parseDef "data Int where zero(): Float"
             checkPT emptyProgram x `shouldFail` "Definition Mismatch"
@@ -33,7 +33,7 @@ spec = do
         it "allows data types" $ do
             x:_ <- parseString parseDef "data Int where zero(): Int"
             checkPT emptyProgram x `shouldSatisfy` isRight
-    describe "neg" $ do
+    describe "checkPT (codata)" $ do
         let stream = "codata StreamOfInt where StreamOfInt.head(): Int"
         it "prevents duplicates" $ do
             defs <- parseString parseDef $ unlines [stream, stream]
