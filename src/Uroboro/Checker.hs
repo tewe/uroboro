@@ -99,9 +99,9 @@ checkPT prog@(Program names _ des _ _) (PTNeg name des')
   where
     mismatch (PTDes _ _ _ innerType) = innerType /= name
     missing (PTDes _ _ args _)       = args \\ (name:names) /= []
-checkPT (Program _ _ _ _ rs) (PTFun name _ _ _)
+checkPT p@(Program _ _ _ _ rs) (PTFun name _ _ _)
     | any clash rs     = Left "Shadowed Definition"
-    | otherwise = Left "TODO"
+    | otherwise = return p  -- TODO
   where
     clash (name', _) = name' == name
 
