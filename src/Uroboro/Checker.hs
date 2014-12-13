@@ -1,11 +1,11 @@
 module Uroboro.Checker where
 
-import Control.Monad (foldM)
+import Control.Monad (foldM, zipWithM)
 import Data.List (find, intercalate, (\\))
 
 import Uroboro.Tree
 
-data PTSig = PTSig Identifier [Type] Type deriving (Eq, Show)
+type PTSig = (Identifier, ([Type], Type))
 
 data Program = Program {
       typeNames    :: [Type]  -- Cache types from constructors and destructors.
@@ -20,12 +20,43 @@ emptyProgram = Program [] [] [] [] []
 
 type Context = [(Identifier, Type)]
 
+texpReturnType :: TExp -> Type
+texpReturnType (TVar t _) = t
+texpReturnType (TApp t _ _) = t
+texpReturnType (TCon t _ _) = t
+texpReturnType (TDes t _ _ _) = t
+
+-- |Typecheck a term
+checkPExp :: Program -> Context -> PExp -> Type -> Either String TExp
+checkPExp p c e t = Left "TODO"
+
+-- |Infer a term's type
 inferPExp :: Program -> Context -> PExp -> Either String TExp
 inferPExp _ context (PVar name) = case lookup name context of
     Nothing  -> Left "Unbound Variable"
     Just typ -> Right (TVar typ name)
-inferPExp p _ (PApp name _) = Left "TODO"
-inferPExp _ _ (PDes _ _ _) = Left "TODO"
+inferPExp p c (PApp name args) = case lookup name (functions p) of  -- TODO catch ambiguous
+    Just (argTypes, returnType) ->
+        zipWithM (checkPExp p c) args argTypes >>= return . TApp returnType name
+    Nothing -> case find match (constructors p) of
+        Just (PTCon returnType _ argTypes) ->
+            zipWithM (checkPExp p c) args argTypes >>= return . TCon returnType name
+        Nothing -> Left "Missing Definition"
+  where
+    match (PTCon _ n _) = n == name
+inferPExp p c (PDes name args inner) = do
+    tinner <- inferPExp p c inner
+    (argTypes, returnType) <- nu p (texpReturnType tinner) name
+    targs <- zipWithM (checkPExp p c) args argTypes
+    return $ TDes returnType name targs tinner
+  where
+    -- |Look up signature of named destructor for type
+    nu :: Program -> Type -> Identifier -> Either String ([Type], Type)
+    nu p innerType name = case find match (destructors p) of
+        Just (PTDes returnType _ argTypes _) -> return (argTypes, returnType)
+        Nothing -> Left "Missing Definition"
+      where
+        match (PTDes _ n _ t) = n == name && t == innerType
 
 -- |Fold over type definitions.
 checkPT :: Program -> PT -> Either String Program
@@ -59,19 +90,3 @@ checkPT prog@(Program names _ _ funs rules) (PTFun name args t rules')
 -- |Turn parser output into interpreter input.
 typecheck :: [PT] -> Either String Rules
 typecheck defs = foldM checkPT emptyProgram defs >>= return . rules
-
--- |Infer a term's type
-expInfer :: [PT] -> Context -> PExp -> Either String TExp
-expInfer _ vars (PVar name) = case lookup name vars of
-    Just t  -> return (TVar t name)
-    Nothing -> Left $ "Unknown Variable: " ++ name ++ " isn't bound"
-expInfer defs vars (PApp name args) = Left "TODO"
-expInfer defs vars (PDes name args inner) = do
-    fromType <- expInfer defs vars inner
-    Left "TODO"
-
--- |Typecheck a term
-exp :: [PT] -> Context -> PExp -> Type -> Either String TExp
-exp defs vars (PVar name) returnType = Left "TODO"
-exp defs vars (PApp name args) returnType = Left "TODO"
-exp defs vars (PDes name args inner) returnType = Left "TODO"
