@@ -80,3 +80,15 @@ spec = do
             let t = (Type "ListOfInt")
             checkPExp p c e t `shouldBe` Right (TApp t "map"
                 [TVar (Type "IntToInt") "f", TVar t "l"])
+    describe "inferPExp" $ do
+        it "infers construction" $ do
+            p <- prelude
+            e <- parseString parseExp "empty()"
+            let t = (Type "ListOfInt")
+            inferPExp p [] e `shouldBe` Right (TCon t "empty" [])
+        it "infers applications" $ do
+            p <- prelude
+            e <- parseString parseExp "map(f, l)"
+            let t = (Type "ListOfInt")
+            inferPExp p c e `shouldBe` Right (TApp t "map"
+                [TVar (Type "IntToInt") "f", TVar t "l"])
