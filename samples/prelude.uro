@@ -1,7 +1,11 @@
 data Int where
     zero(): Int
     succ(Int): Int
-    pred(Int): Int
+--  pred(Int): Int
+
+function add(Int, Int): Int where
+    add(x, zero()) = x
+    add(x, succ(y)) = add(succ(x), y)
 
 codata IntToInt where
     IntToInt.apply(Int): Int
