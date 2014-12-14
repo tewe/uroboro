@@ -1,6 +1,8 @@
 module Uroboro.CheckerSpec
     (
       spec
+    , prelude
+    , shouldFail
     ) where
 
 import Control.Monad (foldM)
