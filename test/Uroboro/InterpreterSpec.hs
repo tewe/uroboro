@@ -35,19 +35,34 @@ main input = do
 
 spec :: Spec
 spec = do
+    let int = Type "Int"
     describe "pattern matching" $ do
         it "fills variables" $ do
             let name = "l"
             let t = Type "ListOfInt"
             let term = (TCon t "empty" [])
             pmatch term (TPVar t name) `shouldBe` Right [(name, term)]
-    describe "reduction" $ do
+    describe "reduce" $ do
         it "stops" $ do
             p <- rules
             reduce p (TCon (Type "Int") "zero" []) `shouldFail` "Not a redex"
-        it "works" $ do
+        it "steps" $ do
             p <- rules
             m <- main "add(zero(), succ(zero()))"
-            let int = Type "Int"
             reduce p m `shouldBe` Right (TApp int "add"
                 [TCon int "succ" [TCon int "zero" []], TCon int "zero" []])
+    describe "eval" $ do
+        it "completes" $ do
+            p <- rules
+            m <- main "add(zero(), succ(zero()))"
+            eval p m `shouldBe` TCon int "succ" [TCon int "zero" []]
+        it "can run add1(0)" $ do
+            p <- rules
+            m <- main "add1().apply(zero())"
+            r <- main "succ(zero())"
+            eval p m `shouldBe` r
+        it "can run add1(1)" $ do
+            p <- rules
+            m <- main "add1().apply(succ(zero()))"
+            r <- main "succ(succ(zero()))"
+            eval p m `shouldBe` r

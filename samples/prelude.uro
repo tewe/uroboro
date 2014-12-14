@@ -10,6 +10,9 @@ function add(Int, Int): Int where
 codata IntToInt where
     IntToInt.apply(Int): Int
 
+function add1(): IntToInt where
+    add1().apply(x) = succ(x)
+
 codata TwoIntToInt where
     TwoIntToInt.apply(Int, Int): Int
 

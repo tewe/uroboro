@@ -68,7 +68,7 @@ note a m = case m of
     Just b  -> Right b
 
 -- |Find hole
-reducible :: TExp -> Either String (E, Identifier)
+reducible :: TExp -> Either String (E, Identifier)  -- Could be Maybe.
 reducible (TApp r f args) = return (EApp r args, f)
 reducible (TDes r d args inner) = do
     (inner', f) <- reducible inner
@@ -84,3 +84,9 @@ reduce rules term = do
     case filter isRight ts of
         [Right t'] -> return t'
         _ -> Left $ "Multiple Matches: " ++ show term
+
+-- |Star reduction.
+eval :: Rules -> TExp -> TExp
+eval r e = case reduce r e of
+    Left _ -> e
+    Right e' -> eval r e'
