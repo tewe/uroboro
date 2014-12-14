@@ -1,6 +1,7 @@
 module Uroboro.Interpreter where
 
 import Control.Monad (zipWithM)
+import Data.Either (isRight)
 
 import Uroboro.Tree
 
@@ -22,7 +23,8 @@ pmatch term (TPVar r x)
     returnType (TDes t _ _ _) = t
 pmatch (TCon r c ts) (TPCon r' c' ps)
     | r /= r'                = Left "Type Mismatch"
-    | c /= c'                = Left "Name Mismatch"
+    | c /= c'                = Left $
+        "Name Mismatch: constructor " ++ c' ++ " doesn't match pattern " ++ c
     | length ts /= length ps = Left "Argument Length Mismatch"
     | otherwise              = zipWithM pmatch ts ps >>= return . concat
 pmatch _ _                   = Left "Not Comparable"
@@ -78,7 +80,7 @@ reduce :: Rules -> TExp -> Either String TExp
 reduce rules term = do
     (context, f) <- reducible term
     rulesf <- note ("Missing Definition: " ++ f) $ lookup f rules
-    ts <- mapM (contract context) rulesf
-    case ts of
-        [t'] -> return t'
+    let ts = map (contract context) rulesf
+    case filter isRight ts of
+        [Right t'] -> return t'
         _ -> Left $ "Multiple Matches: " ++ show term
