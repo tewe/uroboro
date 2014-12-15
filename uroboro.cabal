@@ -37,8 +37,11 @@ test-suite tests
   type:
       exitcode-stdio-1.0
   ghc-options:
+      -fhpc
       -Wall
+  other-modules:       Uroboro.Checker, Uroboro.CheckerSpec
   hs-source-dirs:
+      src
       test
   main-is:
       Spec.hs
