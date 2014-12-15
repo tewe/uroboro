@@ -51,6 +51,26 @@ spec = do
             m <- main "add(zero(), succ(zero()))"
             reduce p m `shouldBe` Right (TApp int "add"
                 [TCon int "succ" [TCon int "zero" []], TCon int "zero" []])
+        it "can reduce applications" $ do
+            p <- rules
+            m <- main "map(add1(), cons(succ(zero()), cons(zero(), empty())))"
+            r <- main "cons(add1().apply(succ(zero())), map(add1(), cons(zero(), empty())))"
+            reduce p m `shouldBe` Right r
+        it "can reduce inside constructors" $ do
+            p <- rules
+            m <- main "cons(add1().apply(succ(zero())), map(add1(), cons(zero(), empty())))"
+            r <- main "cons(succ(succ(zero())), map(add1(), cons(zero(), empty())))"
+            reduce p m `shouldBe` Right r
+        it "can reduce final argument" $ do
+            p <- rules
+            m <- main "cons(succ(succ(zero())), map(add1(), cons(zero(), empty())))"
+            r <- main "cons(succ(succ(zero())), cons(add1().apply(zero()), map(add1(), empty())))"
+            reduce p m `shouldBe` Right r
+        it "matches manual reduction" $ do
+            p <- rules
+            m <- main "cons(succ(succ(zero())), cons(add1().apply(zero()), map(add1(), empty())))"
+            r <- main "cons(succ(succ(zero())), cons(succ(zero()), map(add1(), empty())))"
+            reduce p m `shouldBe` Right r
     describe "eval" $ do
         it "completes" $ do
             p <- rules
