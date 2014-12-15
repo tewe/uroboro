@@ -75,8 +75,20 @@ reducible (TDes r d args inner) = do
     return (EDes r d args inner', f)
 reducible t = Left $ "Not a redex: " ++ show t
 
+-- |Reduce leftmost reducible argument.
+red :: Rules -> [TExp] -> Either String [TExp]
+red _ [] = Left "Not a redex"
+red r (x:xs) = case reducible x of
+    Left _ -> do
+        xs' <- red r xs
+        return (x:xs')
+    Right _ -> do
+        x' <- reduce r x
+        return (x':xs)
+
 -- |One step reduction
 reduce :: Rules -> TExp -> Either String TExp
+reduce r (TCon t n args) = red r args >>= return . TCon t n
 reduce rules term = do
     (context, f) <- reducible term
     rulesf <- note ("Missing Definition: " ++ f) $ lookup f rules
