@@ -78,12 +78,11 @@ reducible t = Left $ "Not a redex: " ++ show t
 -- |Reduce leftmost reducible argument.
 red :: Rules -> [TExp] -> Either String [TExp]
 red _ [] = Left "Not a redex"
-red r (x:xs) = case reducible x of
+red r (x:xs) = case reduce r x of
     Left _ -> do
         xs' <- red r xs
         return (x:xs')
-    Right _ -> do
-        x' <- reduce r x
+    Right x' -> do
         return (x':xs)
 
 -- |One step reduction

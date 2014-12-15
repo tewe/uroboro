@@ -66,11 +66,20 @@ spec = do
             m <- main "cons(succ(succ(zero())), map(add1(), cons(zero(), empty())))"
             r <- main "cons(succ(succ(zero())), cons(add1().apply(zero()), map(add1(), empty())))"
             reduce p m `shouldBe` Right r
-        it "matches manual reduction" $ do
+        it "matches manual reduction (1)" $ do
             p <- rules
             m <- main "cons(succ(succ(zero())), cons(add1().apply(zero()), map(add1(), empty())))"
             r <- main "cons(succ(succ(zero())), cons(succ(zero()), map(add1(), empty())))"
             reduce p m `shouldBe` Right r
+        it "matches manual reduction (2)" $ do
+            p <- rules
+            m <- main "cons(succ(succ(zero())), cons(succ(zero()), map(add1(), empty())))"
+            r <- main "cons(succ(succ(zero())), cons(succ(zero()), empty()))"
+            reduce p m `shouldBe` Right r
+        it "matches manual reduction (3)" $ do
+            p <- rules
+            m <- main "cons(succ(succ(zero())), cons(succ(zero()), empty()))"
+            reduce p m `shouldFail` "Not a redex"
     describe "eval" $ do
         it "completes" $ do
             p <- rules
@@ -86,3 +95,8 @@ spec = do
             m <- main "add1().apply(succ(zero()))"
             r <- main "succ(succ(zero()))"
             eval p m `shouldBe` r
+        it "matches manual reduction" $ do
+            p <- rules
+            m <- main "map(add1(), cons(succ(zero()), cons(zero(), empty())))"
+            r <- main "cons(succ(succ(zero())), cons(succ(zero()), empty()))"
+            eval p m `shouldBe` Right r
