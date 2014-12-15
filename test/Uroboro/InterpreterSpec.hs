@@ -99,4 +99,4 @@ spec = do
             p <- rules
             m <- main "map(add1(), cons(succ(zero()), cons(zero(), empty())))"
             r <- main "cons(succ(succ(zero())), cons(succ(zero()), empty()))"
-            eval p m `shouldBe` Right r
+            eval p m `shouldBe` r
