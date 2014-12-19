@@ -20,8 +20,8 @@ options =
     ]
 
 mainOpts :: [String] -> IO [Flag]
-mainOpts argv = case getOpt Permute options argv of
-    (flags, paths, []) -> return $ flags ++ (map LoadLib paths)
+mainOpts argv = case getOpt (ReturnInOrder LoadLib) options argv of
+    (flags, [], []) -> return flags
     (_, _, errs) -> ioError (userError (concat errs ++ usageInfo header options))
   where
     header = "Usage: uroboro [OPTION...] files..."
