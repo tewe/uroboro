@@ -20,6 +20,10 @@ instance Eq ParseError where
 
 spec :: Spec
 spec = do
+    describe "pq" $ do
+        it "gets selector order right" $ do
+            parse pq "" "fib().tail().head() = succ(zero())" `shouldBe` Right
+                (PQDes "head" [] (PQDes "tail" [] (PQApp "fib" [])))
     describe "parser" $ do
         let int = Type "Int"
         it "recognizes the prelude" $ do

@@ -3,6 +3,7 @@ module Uroboro.Parser
       parseDef
     , parseExp
     , Parser
+    , pq
     ) where
 
 import Control.Applicative ((<*), (<*>), (*>))
@@ -26,8 +27,9 @@ fold x (f:fs) = f (fold x fs)
 
 -- |Parse "a.name(b, ...)..."
 dotNotation :: (String -> [b] -> a -> a) -> Parser a -> Parser b -> Parser a
-dotNotation make a b = liftM fold a <*> (dot *> sepBy1 name dot)
+dotNotation make a b = liftM fold_ a <*> (dot *> sepBy1 name dot)
             where name = liftM make identifier <*> args b
+                  fold_ x l = fold x (reverse l)            -- TODO make fold into foldr.
 
 -- |Parse expression
 pexp :: Parser PExp
