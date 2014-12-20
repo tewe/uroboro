@@ -39,7 +39,7 @@ test-suite tests
   ghc-options:
       -fhpc
       -Wall
-  other-modules:       Uroboro.Checker, Uroboro.CheckerSpec
+  other-modules:       Uroboro.Language, Uroboro.Parser, Uroboro.Syntax, Uroboro.Checker, Uroboro.Exception, Uroboro.Abstract, Uroboro.Token, Uroboro.Interpreter, Uroboro.Tree, Paths_uroboro
   hs-source-dirs:
       src
       test
