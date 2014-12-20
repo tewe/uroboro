@@ -46,7 +46,8 @@ checkPQ p (PQApp name args) (_, (argTypes, returnType)) = do
 checkPQ p (PQDes name args inner) s = do
     tinner <- checkPQ p inner s
     case find (match (tqReturnType tinner)) (destructors p) of
-        Nothing -> Left "Missing Definition"
+        Nothing -> Left $
+            "Missing Definition: " ++ (typeName $ tqReturnType tinner) ++ "." ++ name
         Just (PTDes returnType _ argTypes _) -> do
             targs <- zipWithM (checkPP p) args argTypes
             return $ TQDes returnType name targs tinner
@@ -63,7 +64,7 @@ checkPExp _ c (PVar n) t = case lookup n c of
     Just t' | t' == t   -> return (TVar t n)
             | otherwise -> Left $ "Type Mismatch: " ++ n ++
                 " expected to be " ++ typeName t ++ " but is actually " ++ typeName t'
-    Nothing             -> Left "Unbound Variable"
+    Nothing             -> Left $ "Unbound Variable: " ++ n
 checkPExp p c (PApp name args) t = case lookup name (functions p) of
     Just (argTypes, returnType) | returnType == t ->
                 zipWithM (checkPExp p c) args argTypes >>= return . TApp returnType name
