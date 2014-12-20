@@ -1,4 +1,4 @@
-module Uroboro.CheckerSpec
+module TestMain
     (
       spec
     ) where
