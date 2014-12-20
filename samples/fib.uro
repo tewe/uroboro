@@ -1,0 +1,8 @@
+function addTwo(): TwoIntToInt where
+    addTwo().apply(a, zero()) = a
+    addTwo().apply(a, succ(b)) = addTwo.apply(succ(a), b)
+
+function fib(): StreamOfInt where
+    fib().head() = zero()
+    fib().tail().head() = succ(zero())
+    fib().tail().tail() = zipWith(addTwo, fib(), fib().tail())

@@ -1,7 +1,6 @@
 data Int where
     zero(): Int
     succ(Int): Int
---  pred(Int): Int
 
 function add(Int, Int): Int where
     add(x, zero()) = x
@@ -38,3 +37,7 @@ function mapStream(IntToInt, StreamOfInt): StreamOfInt where
 function zipWith(TwoIntToInt, StreamOfInt, StreamOfInt): StreamOfInt where
     zipWith(f, a, b).head() = f.apply(a.head(), b.head())
     zipWith(f, a, b).tail() = zipWith(f, a.tail(), b.tail())
+
+function zeroes(): StreamOfInt where
+    zeroes().head() = zero()
+    zeroes().tail() = zeroes()
