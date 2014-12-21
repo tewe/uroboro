@@ -1,0 +1,4 @@
+function cycleNats(Int): StreamOfInt where
+    cycleNats(x).head()       = x
+    cycleNats(zero()).tail()  = cycleNats(succ(succ(succ(zero())))) -- N = 3
+    cycleNats(succ(x)).tail() = cycleNats(x)
