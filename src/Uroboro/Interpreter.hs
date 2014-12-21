@@ -94,7 +94,8 @@ reduce rules term = do
     let ts = map (contract context) rulesf
     case filter isRight ts of
         [Right t'] -> return t'
-        _ -> Left $ "Multiple Matches: " ++ show term
+        []         -> Left $ "No Match: " ++ show term
+        _          -> Left $ "Multiple Matches: " ++ show term
 
 -- |Star reduction.
 eval :: Rules -> TExp -> TExp
