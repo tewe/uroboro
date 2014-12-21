@@ -7,6 +7,7 @@ import Text.Parsec (parse)
 import Uroboro.Checker (rules, emptyProgram, checkPT, inferPExp)
 import Uroboro.Interpreter (eval)
 import Uroboro.Parser (Parser, parseDef, parseExp)
+import Uroboro.PrettyPrint (render)
 import Uroboro.Tree
 
 data Mode = Help
@@ -48,7 +49,7 @@ main = do
             prog <- eitherIO $ foldM checkPT emptyProgram defs
             texp  <- eitherIO $ inferPExp prog [] pexp
 
-            print $ eval (rules prog) texp
+            putStrLn (render $ eval (rules prog) texp)
         Typecheck paths -> do
             defs  <- parseFiles paths
             eitherIO $ foldM_ checkPT emptyProgram defs     -- Success is silent.
