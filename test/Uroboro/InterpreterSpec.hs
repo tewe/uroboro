@@ -8,7 +8,7 @@ import Text.Parsec (parse)
 
 import Paths_uroboro
 import Uroboro.Checker (typecheck, inferPExp)
-import Uroboro.CheckerSpec (prelude, shouldFail)
+import Uroboro.CheckerSpec (prelude)
 import Uroboro.Interpreter
 import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Tree
@@ -42,44 +42,6 @@ spec = do
             let t = Type "ListOfInt"
             let term = (TCon t "empty" [])
             pmatch term (TPVar t name) `shouldBe` Right [(name, term)]
-    describe "reduce" $ do
-        it "stops" $ do
-            p <- rules
-            reduce p (TCon (Type "Int") "zero" []) `shouldFail` "Not a redex"
-        it "steps" $ do
-            p <- rules
-            m <- main "add(zero(), succ(zero()))"
-            reduce p m `shouldBe` Right (TApp int "add"
-                [TCon int "succ" [TCon int "zero" []], TCon int "zero" []])
-        it "can reduce applications" $ do
-            p <- rules
-            m <- main "map(add1(), cons(succ(zero()), cons(zero(), empty())))"
-            r <- main "cons(add1().apply(succ(zero())), map(add1(), cons(zero(), empty())))"
-            reduce p m `shouldBe` Right r
-        it "can reduce inside constructors" $ do
-            p <- rules
-            m <- main "cons(add1().apply(succ(zero())), map(add1(), cons(zero(), empty())))"
-            r <- main "cons(succ(succ(zero())), map(add1(), cons(zero(), empty())))"
-            reduce p m `shouldBe` Right r
-        it "can reduce final argument" $ do
-            p <- rules
-            m <- main "cons(succ(succ(zero())), map(add1(), cons(zero(), empty())))"
-            r <- main "cons(succ(succ(zero())), cons(add1().apply(zero()), map(add1(), empty())))"
-            reduce p m `shouldBe` Right r
-        it "matches manual reduction (1)" $ do
-            p <- rules
-            m <- main "cons(succ(succ(zero())), cons(add1().apply(zero()), map(add1(), empty())))"
-            r <- main "cons(succ(succ(zero())), cons(succ(zero()), map(add1(), empty())))"
-            reduce p m `shouldBe` Right r
-        it "matches manual reduction (2)" $ do
-            p <- rules
-            m <- main "cons(succ(succ(zero())), cons(succ(zero()), map(add1(), empty())))"
-            r <- main "cons(succ(succ(zero())), cons(succ(zero()), empty()))"
-            reduce p m `shouldBe` Right r
-        it "matches manual reduction (3)" $ do
-            p <- rules
-            m <- main "cons(succ(succ(zero())), cons(succ(zero()), empty()))"
-            reduce p m `shouldFail` "Not a redex"
     describe "eval" $ do
         it "completes" $ do
             p <- rules

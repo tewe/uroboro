@@ -1,7 +1,7 @@
 module Uroboro.Interpreter where
 
 import Control.Monad (zipWithM)
-import Data.Either (isRight)
+import Data.Either (isRight, rights)
 
 import Uroboro.Tree
 
@@ -60,13 +60,6 @@ contract context (pattern, term) = do
     s <- qmatch context pattern
     return $ foldl subst term s
 
--- | Tag the 'Nothing' value of a 'Maybe'
--- http://hackage.haskell.org/package/errors-1.2.1/docs/src/Control-Error-Util.html#note
-note :: a -> Maybe b -> Either a b
-note a m = case m of
-    Nothing -> Left  a
-    Just b  -> Right b
-
 -- |Find hole
 reducible :: TExp -> Either String (E, Identifier)  -- Could be Maybe.
 reducible (TApp r f args) = return (EApp r args, f)
@@ -75,30 +68,27 @@ reducible (TDes r d args inner) = do
     return (EDes r d args inner', f)
 reducible t = Left $ "Not a redex: " ++ show t
 
--- |Reduce leftmost reducible argument.
-red :: Rules -> [TExp] -> Either String [TExp]
-red _ [] = Left "Not a redex"
-red r (x:xs) = case reduce r x of
-    Left _ -> do
-        xs' <- red r xs
-        return (x:xs')
-    Right x' -> do
-        return (x':xs)
-
--- |One step reduction
-reduce :: Rules -> TExp -> Either String TExp
-reduce r (TCon t n args) = red r args >>= return . TCon t n
-reduce rules term = do
-    (context, f) <- reducible term
-    rulesf <- note ("Missing Definition: " ++ f) $ lookup f rules
-    let ts = map (contract context) rulesf
-    case filter isRight ts of
-        [Right t'] -> return t'
-        []         -> Left $ "No Match: " ++ show term
-        _          -> Left $ "Multiple Matches: " ++ show term
-
 -- |Star reduction.
 eval :: Rules -> TExp -> TExp
-eval r e = case reduce r e of
-    Left _ -> e
-    Right e' -> eval r e'
+eval _ e@(TVar _ _)  = e
+eval r (TCon t c as) = TCon t c $ map (eval r) as
+eval r (TApp t f as) = case lookup f r of
+    Nothing -> error "Did you type-check?"
+    Just rf -> case rights $ map (contract con) rf of
+        [e'] -> eval r e'
+        _    -> es
+  where
+    as' = map (eval r) as
+    es  = TApp t f as'
+    con = EApp t as'
+eval r (TDes t n args inner) = case reducible es of     -- TODO factor out.
+    Left _         -> error "Did you type-check?"
+    Right (con, f) -> case lookup f r of
+        Nothing -> error "Did you type-check?"
+        Just rf -> case rights $ map (contract con) rf of
+            [e'] -> eval r e'
+            _    -> es
+  where
+    args'  = map (eval r) args
+    inner' = eval r inner
+    es     = TDes t n args' inner'
