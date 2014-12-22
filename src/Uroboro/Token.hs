@@ -1,5 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
+{-|
+Description : Primitive parsers
+
+We operate above the character level, so we don't have to deal with variable whitespace.
+-}
 module Uroboro.Token
     (
       colon
@@ -12,9 +17,10 @@ module Uroboro.Token
     , whiteSpace
     ) where
 
-import qualified Text.Parsec.Token as P
+import qualified Text.Parsec.Token as P -- TODO have Haddock use those docstrings.
 
 import Uroboro.Language (languageDef)
+-- TODO add signatures using our Parser type.
 
 lexer      = P.makeTokenParser languageDef
 

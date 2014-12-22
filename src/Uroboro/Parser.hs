@@ -1,3 +1,8 @@
+{-|
+Description : Parse string into parse tree
+
+Parsec applicative style.
+-}
 module Uroboro.Parser
     (
       parseDef
@@ -24,25 +29,25 @@ import Uroboro.Tree
     , Type(..)
     )
 
--- |Parser without user state
+-- |Parser without user state.
 type Parser = Parsec String ()
 
--- |Parse "(p, ...)"
+-- |Parse "(p, ...)".
 args :: Parser a -> Parser [a]
 args p = parens (commaSep p)
 
--- |Recursively apply a list of functions to a start value, from left to right
+-- |Recursively apply a list of functions to a start value, from left to right.
 fold :: a -> [a -> a] -> a
 fold x [] = x
 fold x (f:fs) = f (fold x fs)
 
--- |Parse "a.name(b, ...)..."
+-- |Parse "a.name(b, ...)...".
 dotNotation :: (String -> [b] -> a -> a) -> Parser a -> Parser b -> Parser a
 dotNotation make a b = liftM fold_ a <*> (dot *> sepBy1 name dot)
             where name = liftM make identifier <*> args b
                   fold_ x l = fold x (reverse l)            -- TODO make fold into foldr.
 
--- |Parse expression
+-- |Parse expression.
 pexp :: Parser PExp
 pexp = choice [des, app, var] <?> "expression"
   where
@@ -50,25 +55,25 @@ pexp = choice [des, app, var] <?> "expression"
     app = try $ liftM PApp identifier <*> args pexp
     var = liftM PVar identifier
 
--- |Parse exactly one expression
+-- |Parse exactly one expression.
 parseExp :: Parser PExp
 parseExp = whiteSpace *> pexp <* eof
 
--- |Parse pattern
+-- |Parse pattern.
 pp :: Parser PP
 pp = choice [con, var] <?> "pattern"
   where
     con = try $ liftM PPCon identifier <*> args pp
     var = liftM PPVar identifier
 
--- |Parse copattern
+-- |Parse copattern.
 pq :: Parser PQ
 pq = choice [des, app] <?> "copattern"
   where
     des = try $ dotNotation PQDes (app <?> "function") pp
     app = liftM PQApp identifier <*> args pp
 
--- |Parse whole file
+-- |Parse whole file.
 parseDef :: Parser [PT]
 parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
   where
@@ -82,7 +87,6 @@ parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
         (dot *> identifier) <*> args typ <*> (colon *> typ)
     rul = liftM PTRule pq <*> (symbol "=" *> pexp)
 
-    -- |For readability.
     typ :: Parser Type
     typ = liftM Type identifier
 

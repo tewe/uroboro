@@ -1,43 +1,86 @@
+{-|
+Description : Parse tree and AST
+
+The program representations we work on.
+-}
 module Uroboro.Tree where
 
+-- |This is used for type names, function names, constructor and destructor names,
+-- as well as variable names.
 type Identifier = String
+-- |Represents both positive and negative data types.
 newtype Type = Type Identifier deriving (Eq, Show)
 
-{- Parse Tree -}
+-- |
+-- = Parse Tree
 
-data PExp = PVar Identifier
-          | PApp Identifier [PExp]
-          | PDes Identifier [PExp] PExp deriving (Eq, Show)
+-- TODO move headings into export list.
 
-data PP = PPVar Identifier
-        | PPCon Identifier [PP] deriving (Eq, Show)
+-- |Expression (Term).
+data PExp
+    -- |Variable.
+    = PVar Identifier
+    -- |Constructor or function application.
+    | PApp Identifier [PExp]
+    -- |Destructor application (Selection).
+    | PDes Identifier [PExp] PExp deriving (Eq, Show)
 
-data PQ = PQApp Identifier [PP]
-        | PQDes Identifier [PP] PQ deriving (Eq, Show)
+-- |Pattern.
+data PP
+    -- |Variable pattern.
+    = PPVar Identifier
+    -- |Constructor pattern.
+    | PPCon Identifier [PP] deriving (Eq, Show)
 
+-- |Copattern.
+data PQ
+    -- |Hole pattern.
+    = PQApp Identifier [PP]
+    -- |Destructor pattern.
+    | PQDes Identifier [PP] PQ deriving (Eq, Show)
+
+-- |Constructor definition.
 data PTCon = PTCon Type Identifier [Type] deriving (Eq, Show)
 
--- |PTDes returnType name args innerType.
+-- |Destructor definition.
+-- Return type first, type to destruct last.
 data PTDes = PTDes Type Identifier [Type] Type deriving (Eq, Show)
 
+-- |Part of a function definition.
 data PTRule = PTRule PQ PExp deriving (Eq, Show)
 
-data PT = PTPos Type [PTCon]
-        | PTNeg Type [PTDes]
-        | PTFun Identifier [Type] Type [PTRule] deriving (Eq, Show)
+-- |Definition.
+data PT
+    -- |Data type.
+    = PTPos Type [PTCon]
+    -- |Codata type.
+    | PTNeg Type [PTDes]
+    -- |Function.
+    | PTFun Identifier [Type] Type [PTRule] deriving (Eq, Show)
 
-{- Typed Syntax Tree -}
+-- |
+-- = Typed Syntax Tree
 
-data TExp = TVar Type Identifier
-          | TApp Type Identifier [TExp]
-          | TCon Type Identifier [TExp]
-          | TDes Type Identifier [TExp] TExp deriving (Show, Eq)
+-- |Expression with type annotations.
+data TExp
+    -- |Variable.
+    = TVar Type Identifier
+    -- |Function application.
+    | TApp Type Identifier [TExp]
+    -- |Constructor application.
+    | TCon Type Identifier [TExp]
+    -- |Destructor application.
+    | TDes Type Identifier [TExp] TExp deriving (Show, Eq)
 
+-- |Pattern with type annotations.
 data TP = TPVar Type Identifier
         | TPCon Type Identifier [TP] deriving (Show, Eq)
 
+-- |Copattern with type annotations.
 data TQ = TQApp Type Identifier [TP]
         | TQDes Type Identifier [TP] TQ deriving (Show, Eq)
 
+-- |One rule of a function definition.
 type Rule = (TQ, TExp)
+-- |A complete program.
 type Rules = [(Identifier, [Rule])]

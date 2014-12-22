@@ -1,3 +1,8 @@
+{-|
+Description : Typechecker
+
+Typecheck parser output, which turns it into interpreter input.
+-}
 module Uroboro.Checker
     (
       checkPExp
@@ -31,25 +36,32 @@ import Uroboro.Tree
     , Type(..)
     )
 
+-- |Signature of a function definition.
 type PTSig = (Identifier, ([Type], Type))
 
+-- |State of the typechecker.
 data Program = Program {
-      typeNames    :: [Type]  -- Cache types from constructors and destructors.
+      typeNames    :: [Type]  -- Cache types of constructors and destructors.
     , constructors :: [PTCon]
     , destructors  :: [PTDes]
     , functions    :: [PTSig] -- Always update functions and rules together.
+    -- |Extract the end result of typechecking.
     , rules        :: Rules
     } deriving (Eq, Show)
 
+-- |Start value for folds.
 emptyProgram :: Program
 emptyProgram = Program [] [] [] [] []
 
+-- |Types of the variables bound in a pattern.
 type Context = [(Identifier, Type)]
 
+-- |Extract variable types from a typed pattern.
 tpContext :: TP -> Context
 tpContext (TPVar t n) = [(n, t)]
 tpContext (TPCon _ _ args) = concat $ map tpContext args
 
+-- |Extract variable types from a typed copattern.
 tqContext :: TQ -> Context
 tqContext (TQApp _ _ args) = concat $ map tpContext args
 tqContext (TQDes _ _ args inner) = concat [tqContext inner, concat $ map tpContext args]
@@ -80,11 +92,12 @@ checkPQ p (PQDes name args inner) s = do
   where
     match t (PTDes _ n _ innerType) = n == name && innerType == t
 
+-- |The type a copattern matches.
 tqReturnType :: TQ -> Type
 tqReturnType (TQApp t _ _) = t
 tqReturnType (TQDes t _ _ _) = t
 
--- |Typecheck a term
+-- |Typecheck a term.
 checkPExp :: Program -> Context -> PExp -> Type -> Either String TExp
 checkPExp _ c (PVar n) t = case lookup n c of
     Just t' | t' == t   -> return (TVar t n)
@@ -110,7 +123,7 @@ checkPExp p c (PDes name args inner) t = case find match (destructors p) of
   where
     match (PTDes returnType n a _) = n == name && returnType == t && length a == length args
 
--- |Infer a term's type
+-- |Infer the type of a term.
 inferPExp :: Program -> Context -> PExp -> Either String TExp
 inferPExp _ context (PVar name) = case lookup name context of
     Nothing  -> Left "Unbound Variable"
@@ -140,16 +153,18 @@ inferPExp p c (PDes name args inner) = do
 
     match t' (PTDes _ n _ t) = n == name && t == t'
 
+-- |Identify a type to the user.
 typeName :: Type -> Identifier
 typeName (Type n) = n
 
+-- |Typecheck a rule against the function#s signature.
 checkPTRule :: Program -> PTSig -> PTRule -> Either String Rule
 checkPTRule p s (PTRule left right) = do
     tleft <- checkPQ p left s
     tright <- checkPExp p (tqContext tleft) right (tqReturnType tleft)
     return (tleft, tright)
 
--- |Fold over type definitions.
+-- |Fold to typecheck definitions.
 checkPT :: Program -> PT -> Either String Program
 checkPT prog@(Program names cons _ _ _) (PTPos name cons')
     | name `elem` names  = Left "Shadowed Definition"

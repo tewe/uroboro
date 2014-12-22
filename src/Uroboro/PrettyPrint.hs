@@ -1,3 +1,8 @@
+{-|
+Description : User-readable syntax trees
+
+We want interpreter output (reduced expressions) to look like input.
+-}
 module Uroboro.PrettyPrint where
 
 import Data.List (intercalate)

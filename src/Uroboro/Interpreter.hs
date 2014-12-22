@@ -1,3 +1,8 @@
+{-|
+Description : Evaluate Uroboro
+
+Define the operational semantics and reduce terms.
+-}
 module Uroboro.Interpreter
     (
       eval
@@ -18,12 +23,14 @@ import Uroboro.Tree
     , Type(..)
     )
 
+-- |Evaluation contexts.
 data E = EApp Type [TExp]
        | EDes Type Identifier [TExp] E deriving (Show, Eq)
 
+-- |Result of a pattern match.
 type Substitution = [(Identifier, TExp)]
 
--- |Pattern matching
+-- |Pattern matching.
 pmatch :: TExp -> TP -> Either String Substitution
 pmatch (TVar _ _) _          = error "Substitute variables before trying to match"
 pmatch term (TPVar r x)
@@ -42,7 +49,7 @@ pmatch (TCon r c ts) (TPCon r' c' ps)
     | otherwise              = zipWithM pmatch ts ps >>= return . concat
 pmatch _ _                   = Left "Not Comparable"
 
--- |Copattern matching (inside-out?)
+-- |Copattern matching.
 qmatch :: E -> TQ -> Either String Substitution
 qmatch (EApp r as) (TQApp r' _ ps)
     | r /= r'                = error "Type checker guarantees hole type"
@@ -58,7 +65,7 @@ qmatch (EDes r d as inner) (TQDes r' d' ps inner')
         return $ is ++ (concat ss)
 qmatch _ _                   = Left "Not Comparable"
 
--- |Substitute
+-- |Substitute all occurences.
 subst :: TExp -> (Identifier, TExp) -> TExp
 subst t@(TVar _ n') (n, term)
     | n == n'               = term
@@ -67,13 +74,13 @@ subst (TApp t n as) s       = TApp t n $ map (flip subst s) as
 subst (TCon t n as) s       = TCon t n $ map (flip subst s) as
 subst (TDes t n as inner) s = TDes t n (map (flip subst s) as) (subst inner s)
 
--- |Contraction
+-- |If context matches rule, apply it.
 contract :: E -> Rule -> Either String TExp
 contract context (pattern, term) = do
     s <- qmatch context pattern
     return $ foldl subst term s
 
--- |Find hole
+-- |Find hole.
 reducible :: TExp -> Either String (E, Identifier)  -- Could be Maybe.
 reducible (TApp r f args) = return (EApp r args, f)
 reducible (TDes r d args inner) = do
