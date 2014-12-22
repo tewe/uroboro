@@ -2,7 +2,7 @@ module Uroboro.PrettyPrint where
 
 import Data.List (intercalate)
 
-import Uroboro.Tree
+import Uroboro.Tree (TExp(..))
 
 parens :: String -> String
 parens s = "(" ++ s ++ ")"

@@ -1,9 +1,22 @@
-module Uroboro.Interpreter where
+module Uroboro.Interpreter
+    (
+      eval
+    , pmatch
+    ) where
 
 import Control.Monad (zipWithM)
-import Data.Either (isRight, rights)
+import Data.Either (rights)
 
 import Uroboro.Tree
+    (
+      Identifier
+    , Rule
+    , Rules
+    , TExp(..)
+    , TP(..)
+    , TQ(..)
+    , Type(..)
+    )
 
 data E = EApp Type [TExp]
        | EDes Type Identifier [TExp] E deriving (Show, Eq)

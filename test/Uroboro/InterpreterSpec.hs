@@ -6,12 +6,18 @@ module Uroboro.InterpreterSpec
 import Test.Hspec
 import Text.Parsec (parse)
 
-import Paths_uroboro
+import Paths_uroboro (getDataFileName)
 import Uroboro.Checker (typecheck, inferPExp)
 import Uroboro.CheckerSpec (prelude)
-import Uroboro.Interpreter
+import Uroboro.Interpreter (pmatch, eval)
 import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Tree
+    (
+      Rules
+    , TExp(..)
+    , TP(..)
+    , Type(..)
+    )
 import Utils (parseString)
 
 rules :: IO Rules

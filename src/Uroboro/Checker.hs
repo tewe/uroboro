@@ -1,9 +1,35 @@
-module Uroboro.Checker where
+module Uroboro.Checker
+    (
+      checkPExp
+    , checkPT
+    , Context
+    , emptyProgram
+    , inferPExp
+    , Program
+    , rules
+    , typecheck
+    ) where
 
 import Control.Monad (foldM, zipWithM)
 import Data.List ((\\), find, nub)
 
 import Uroboro.Tree
+    (
+      Identifier
+    , PExp(..)
+    , PP(..)
+    , PQ(..)
+    , PT(..)
+    , PTCon(..)
+    , PTDes(..)
+    , PTRule(..)
+    , Rule
+    , Rules
+    , TExp(..)
+    , TP(..)
+    , TQ(..)
+    , Type(..)
+    )
 
 type PTSig = (Identifier, ([Type], Type))
 

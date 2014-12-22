@@ -11,11 +11,19 @@ import Data.Either (isRight)
 import Test.Hspec
 import Text.Parsec (parse)
 
-import Paths_uroboro
+import Paths_uroboro (getDataFileName)
 import Uroboro.Checker
+    (
+      checkPExp
+    , checkPT
+    , Context
+    , emptyProgram
+    , inferPExp
+    , Program
+    )
 import Uroboro.Parser (parseDef, parseExp)
-import Uroboro.Tree
-import Utils
+import Uroboro.Tree (TExp(..), Type(..))
+import Utils (parseString)
 
 prelude :: IO Program
 prelude = do

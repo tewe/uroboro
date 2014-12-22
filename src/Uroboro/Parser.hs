@@ -13,6 +13,16 @@ import Text.Parsec
 
 import Uroboro.Token
 import Uroboro.Tree
+    (
+      PExp(..)
+    , PP(..)
+    , PQ(..)
+    , PT(..)
+    , PTCon(..)
+    , PTDes(..)
+    , PTRule(..)
+    , Type(..)
+    )
 
 -- |Parser without user state
 type Parser = Parsec String ()

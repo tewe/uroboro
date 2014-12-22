@@ -1,4 +1,13 @@
-module Paths_uroboro where
+{-|
+Description : Mock out Cabal path abstraction
 
+This is a mock copy of soething Cabal generates during installation.
+-}
+module Paths_uroboro
+    (
+      getDataFileName
+    ) where
+
+-- |Adjust path for Cabal moving things around.
 getDataFileName :: FilePath -> IO FilePath
 getDataFileName = return
