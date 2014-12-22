@@ -6,7 +6,7 @@ module Uroboro.CheckerSpec
     ) where
 
 import Control.Monad (foldM)
-import Data.Either (isRight)
+import Data.Either (isLeft, isRight)
 
 import Test.Hspec
 import Text.Parsec (parse)
@@ -53,6 +53,19 @@ Right  x `shouldFail` prefix = expectationFailure
 
 spec :: Spec
 spec = do
+    describe "too few arguments" $ do
+        it "constructors" $ do
+            p <- prelude
+            e <- parseString parseExp "succ()"
+            checkPExp p [] e (Type "Int") `shouldFail` "Length Mismatch"
+        it "calls (data)" $ do
+            p <- prelude
+            e <- parseString parseExp "map()"
+            checkPExp p [] e (Type "ListOfInt") `shouldFail` "Length Mismatch"
+        it "calls (codata)" $ do
+            p <- prelude
+            e <- parseString parseExp "mapStream().head()"
+            checkPExp p [] e (Type "StreamOfInt") `shouldSatisfy` isLeft
     describe "checkPT (data)" $ do
         it "checks return types" $ do
             x:_ <- parseString parseDef "data Int where zero(): Float"

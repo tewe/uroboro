@@ -66,12 +66,17 @@ tqContext :: TQ -> Context
 tqContext (TQApp _ _ args) = concat $ map tpContext args
 tqContext (TQDes _ _ args inner) = concat [tqContext inner, concat $ map tpContext args]
 
+-- |A zipWithM that requires identical lengths.
+zipStrict :: (a -> b -> Either String c) -> [a] -> [b] -> Either String [c]
+zipStrict f a b | length a == length b = zipWithM f a b
+                | otherwise            = Left "Length Mismatch"
+
 -- |Typecheck a pattern
 checkPP :: Program -> PP -> Type -> Either String TP
 checkPP _ (PPVar name) t = return (TPVar t name)
 checkPP p (PPCon name args) t = case find match (constructors p) of
     Just (PTCon _ _ argTypes) ->
-        zipWithM (checkPP p) args argTypes >>= return . TPCon t name    -- TODO check length
+        zipStrict (checkPP p) args argTypes >>= return . TPCon t name
     Nothing -> Left "Missing Definition"
   where
     match (PTCon returnType n _) = n == name && returnType == t
@@ -79,7 +84,7 @@ checkPP p (PPCon name args) t = case find match (constructors p) of
 -- |Typecheck a copattern. Takes hole type.
 checkPQ :: Program -> PQ -> PTSig -> Either String TQ
 checkPQ p (PQApp name args) (_, (argTypes, returnType)) = do
-    targs <- zipWithM (checkPP p) args argTypes
+    targs <- zipStrict (checkPP p) args argTypes
     return $ TQApp returnType name targs
 checkPQ p (PQDes name args inner) s = do
     tinner <- checkPQ p inner s
@@ -87,7 +92,7 @@ checkPQ p (PQDes name args inner) s = do
         Nothing -> Left $
             "Missing Definition: " ++ (typeName $ tqReturnType tinner) ++ "." ++ name
         Just (PTDes returnType _ argTypes _) -> do
-            targs <- zipWithM (checkPP p) args argTypes
+            targs <- zipStrict (checkPP p) args argTypes
             return $ TQDes returnType name targs tinner
   where
     match t (PTDes _ n _ innerType) = n == name && innerType == t
@@ -106,11 +111,11 @@ checkPExp _ c (PVar n) t = case lookup n c of
     Nothing             -> Left $ "Unbound Variable: " ++ n
 checkPExp p c (PApp name args) t = case lookup name (functions p) of
     Just (argTypes, returnType) | returnType == t ->
-                zipWithM (checkPExp p c) args argTypes >>= return . TApp returnType name
+                zipStrict (checkPExp p c) args argTypes >>= return . TApp returnType name
         | otherwise -> Left "Type Mismatch"
     Nothing -> case find match (constructors p) of
         Just (PTCon _ _ argTypes) ->
-            zipWithM (checkPExp p c) args argTypes >>= return . TCon t name
+            zipStrict (checkPExp p c) args argTypes >>= return . TCon t name
         Nothing -> Left "Missing Definition"
   where
     match (PTCon returnType n _) = n == name && returnType == t
@@ -119,7 +124,7 @@ checkPExp p c (PDes name args inner) t = case find match (destructors p) of
         "Missing Definition: no destructor to get " ++ typeName t ++ " from " ++ name
     Just (PTDes _ _ argTypes innerType) -> do
         tinner <- checkPExp p c inner innerType
-        targs <- zipWithM (checkPExp p c) args argTypes
+        targs <- zipStrict (checkPExp p c) args argTypes
         return $ TDes t name targs tinner
   where
     match (PTDes r n a _) = n == name && r == t && length a == length args
@@ -131,10 +136,10 @@ inferPExp _ context (PVar name) = case lookup name context of
     Just typ -> Right (TVar typ name)
 inferPExp p c (PApp name args) = case lookup name (functions p) of  -- TODO catch ambiguous
     Just (argTypes, returnType) ->
-        zipWithM (checkPExp p c) args argTypes >>= return . TApp returnType name
+        zipStrict (checkPExp p c) args argTypes >>= return . TApp returnType name
     Nothing -> case find match (constructors p) of
         Just (PTCon returnType _ argTypes) ->
-            zipWithM (checkPExp p c) args argTypes >>= return . TCon returnType name
+            zipStrict (checkPExp p c) args argTypes >>= return . TCon returnType name
         Nothing -> Left "Missing Definition"
   where
     match (PTCon _ n _) = n == name
@@ -143,7 +148,7 @@ inferPExp p c (PDes name args inner) = do
     case find (match (texpReturnType tinner)) (destructors p) of
         Nothing -> Left "Missing Definition"
         Just (PTDes returnType _ argTypes _) -> do
-            targs <- zipWithM (checkPExp p c) args argTypes
+            targs <- zipStrict (checkPExp p c) args argTypes
             return $ TDes returnType name targs tinner
   where
     texpReturnType :: TExp -> Type
