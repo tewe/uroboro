@@ -115,13 +115,14 @@ checkPExp p c (PApp name args) t = case lookup name (functions p) of
   where
     match (PTCon returnType n _) = n == name && returnType == t
 checkPExp p c (PDes name args inner) t = case find match (destructors p) of
-    Nothing -> Left $ "Missing Definition: no destructor to get " ++ typeName t ++ " from " ++ name
+    Nothing -> Left $
+        "Missing Definition: no destructor to get " ++ typeName t ++ " from " ++ name
     Just (PTDes _ _ argTypes innerType) -> do
         tinner <- checkPExp p c inner innerType
         targs <- zipWithM (checkPExp p c) args argTypes
         return $ TDes t name targs tinner
   where
-    match (PTDes returnType n a _) = n == name && returnType == t && length a == length args
+    match (PTDes r n a _) = n == name && r == t && length a == length args
 
 -- |Infer the type of a term.
 inferPExp :: Program -> Context -> PExp -> Either String TExp
