@@ -8,7 +8,6 @@ module Utils
 
 import Text.Parsec (parse, ParseError)
 
-import Uroboro.Exception
 import Uroboro.Parser (Parser)
 
 instance Eq ParseError where
@@ -17,7 +16,7 @@ instance Eq ParseError where
 -- |Exceptions instead of Either.
 parseIO :: Parser a -> String -> String -> IO a
 parseIO parser fname input = case parse parser fname input of
-    Left _ -> throwIO ParseException
+    Left _ -> ioError $ userError ""
     Right v -> return v
 
 parseFromFile :: Parser a -> FilePath -> IO a
