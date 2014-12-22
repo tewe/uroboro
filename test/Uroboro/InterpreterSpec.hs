@@ -12,7 +12,6 @@ import Uroboro.CheckerSpec (prelude)
 import Uroboro.Interpreter
 import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Tree
-
 import Utils (parseString)
 
 rules :: IO Rules

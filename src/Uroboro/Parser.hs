@@ -8,6 +8,7 @@ module Uroboro.Parser
 
 import Control.Applicative ((<*), (<*>), (*>))
 import Control.Monad (liftM)
+
 import Text.Parsec
 
 import Uroboro.Token

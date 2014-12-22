@@ -5,8 +5,8 @@ module Uroboro.Language
       languageDef
     ) where
 
-import Text.Parsec.Token
 import Text.Parsec.Language (haskellStyle)
+import Text.Parsec.Token (reservedNames)
 
 languageDef = haskellStyle
     {

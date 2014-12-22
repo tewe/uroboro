@@ -12,10 +12,9 @@ import Test.Hspec
 import Text.Parsec (parse)
 
 import Paths_uroboro
-import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Checker
+import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Tree
-
 import Utils
 
 prelude :: IO Program

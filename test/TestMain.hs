@@ -5,7 +5,7 @@ module TestMain
 
 import Test.Hspec
 
-import Main
+import Main (getOpt, Mode(..))
 
 spec :: Spec
 spec = do

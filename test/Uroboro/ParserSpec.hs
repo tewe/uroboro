@@ -10,10 +10,9 @@ import Text.Parsec (parse, ParseError)
 
 import Test.Hspec
 
+import Paths_uroboro
 import Uroboro.Parser
 import Uroboro.Tree
-
-import Paths_uroboro
 
 instance Eq ParseError where
     _ == _ = False

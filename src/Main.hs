@@ -4,11 +4,11 @@ import System.Exit (exitFailure)
 
 import Text.Parsec (parse)
 
-import Uroboro.Checker (rules, emptyProgram, checkPT, inferPExp)
+import Uroboro.Checker (checkPT, emptyProgram, inferPExp, rules)
 import Uroboro.Interpreter (eval)
-import Uroboro.Parser (Parser, parseDef, parseExp)
+import Uroboro.Parser (parseDef, parseExp, Parser)
 import Uroboro.PrettyPrint (render)
-import Uroboro.Tree
+import Uroboro.Tree (PT)
 
 data Mode = Help
           | Typecheck [FilePath]

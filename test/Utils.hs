@@ -6,7 +6,7 @@ module Utils
     , parseString
     ) where
 
-import Text.Parsec (ParseError, parse)
+import Text.Parsec (parse, ParseError)
 
 import Uroboro.Exception
 import Uroboro.Parser (Parser)

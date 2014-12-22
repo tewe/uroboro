@@ -1,7 +1,7 @@
 module Uroboro.Checker where
 
 import Control.Monad (foldM, zipWithM)
-import Data.List (find, (\\), nub)
+import Data.List ((\\), find, nub)
 
 import Uroboro.Tree
 
