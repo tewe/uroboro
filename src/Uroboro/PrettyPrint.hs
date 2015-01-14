@@ -7,7 +7,7 @@ module Uroboro.PrettyPrint where
 
 import Data.List (intercalate)
 
-import Uroboro.Tree (TExp(..))
+import Uroboro.Tree (Type(Type), TExp(..))
 
 parens :: String -> String
 parens s = "(" ++ s ++ ")"
@@ -21,5 +21,11 @@ args es = parens (commaSep (map render es))
 render :: TExp -> String
 render (TVar _ n)          = n
 render (TApp _ f as)       = f ++ args as
+{-
+render e@(TCon (Type "Int") _ _) = show $ sum e
+  where
+    sum (TCon _ "zero" _) = 0
+    sum (TCon _ "succ" [a]) = 1 + sum a
+-}
 render (TCon _ c as)       = c ++ args as
 render (TDes _ d as inner) = render inner ++ "." ++ d ++ args as
