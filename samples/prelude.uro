@@ -41,3 +41,7 @@ function zipWith(TwoIntToInt, StreamOfInt, StreamOfInt): StreamOfInt where
 function zeroes(): StreamOfInt where
     zeroes().head() = zero()
     zeroes().tail() = zeroes()
+
+function takeN(Int, StreamOfInt): ListOfInt where
+    takeN(zero(), f)  = empty()
+    takeN(succ(n), f) = cons(f.head(), takeN(n, f.tail()))
