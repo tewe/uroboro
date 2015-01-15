@@ -182,7 +182,7 @@ checkPT prog@(Program names cons _ _ _) (PTPos name cons')
         }
   where
     mismatch (PTCon returnType _ _) = returnType /= name
-    missing (PTCon _ _ args)        = args \\ (name:names) /= []
+    missing (PTCon _ _ args)        = (nub args) \\ (name:names) /= []
 checkPT prog@(Program names _ des _ _) (PTNeg name des')
     | name `elem` names = Left "Shadowed Definition"
     | any mismatch des' = Left "Definition Mismatch"

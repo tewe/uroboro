@@ -79,6 +79,9 @@ spec = do
         it "allows data types" $ do
             x:_ <- parseString parseDef "data Int where zero(): Int"
             checkPT emptyProgram x `shouldSatisfy` isRight
+        it "allows multiple arguments with the same type" $ do
+            x:_ <- parseString parseDef "data A where a(A, A): A"
+            checkPT emptyProgram x `shouldSatisfy` isRight
     describe "checkPT (codata)" $ do
         let stream = "codata StreamOfInt where StreamOfInt.head(): Int"
         it "prevents duplicates" $ do
@@ -89,6 +92,9 @@ spec = do
             checkPT emptyProgram x `shouldFail` "Missing Definition"
         it "allows codata types" $ do
             x:_ <- parseString parseDef stream
+            checkPT emptyProgram x `shouldSatisfy` isRight
+        it "allows multiple arguments with the same type" $ do
+            x:_ <- parseString parseDef "codata A where A.a(A, A): A"
             checkPT emptyProgram x `shouldSatisfy` isRight
     describe "checkPExp" $ do
         it "infers construction" $ do
