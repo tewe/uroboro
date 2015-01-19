@@ -95,7 +95,7 @@ eval r (TCon t c as) = TCon t c $ map (eval r) as
 eval r (TApp t f as) = case lookup f r of
     Nothing -> error "Did you type-check?"
     Just rf -> case rights $ map (contract con) rf of
-        [e'] -> eval r e'
+        (e':_) -> eval r e'
         _    -> es
   where
     as' = map (eval r) as
@@ -106,7 +106,7 @@ eval r (TDes t n args inner) = case reducible es of     -- TODO factor out.
     Right (con, f) -> case lookup f r of
         Nothing -> error "Did you type-check?"
         Just rf -> case rights $ map (contract con) rf of
-            [e'] -> eval r e'
+            (e':_) -> eval r e'
             _    -> es
   where
     args'  = map (eval r) args
