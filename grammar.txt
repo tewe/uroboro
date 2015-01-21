@@ -1,26 +1,27 @@
-{repetition; comma or space separated}
+{zero or more; comma separated}
+[one or more; whitespace separated]
 
 f ::= function names
 x ::= variable names
 c ::= constructor names
-s ::= selector names
-D ::= data type names
-C ::= codata type names
+d ::= destructor names
+P ::= data type names
+N ::= codata type names
 
-t ::= D | C     # Type
+T ::= P | N     # Type
 
-e ::= x         # Expression
+e ::= x         # Term
     | f({e})
     | c({e})
-    | e.s({e})
+    | e.d({e})
 
 p ::= x | c({p})    # Pattern
 
-d ::= data D where      # Definition
-         {c({t}): t}
-    | codata C where
-         {C.s({t}): t}
-    | function f({t}): t where
-         {f({p}){.s({p})} = e}
+D ::= data P where      # Definition
+         [c({T}): P]
+    | codata N where
+         [N.d({T}): T]
+    | function f({T}): T where
+         [f({p})[.d({p})] = e]
 
-P ::= {d}       # Programm
+P ::= {D}       # Programm
