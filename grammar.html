@@ -1,0 +1,34 @@
+<pre>
+{one or more, separated by whitespace}
+
+P ::= data type names
+N ::= codata type names
+f ::= function names
+x ::= variable names
+c ::= constructor names
+d ::= destructor names
+
+T ::= P | N
+<span style="text-decoration: overline">T</span> ::= (T<sub>1</sub>, &hellip;, T<sub>n</sub>) | ()
+
+e ::= x
+    | f <span style="text-decoration: overline">e</span>
+    | c <span style="text-decoration: overline">e</span>
+    | e.d <span style="text-decoration: overline">e</span>
+
+<span style="text-decoration: overline">e</span> ::= (e<sub>1</sub>, &hellip;, e<sub>n</sub>) | ()
+
+p ::= x
+    | c <span style="text-decoration: overline">p</span>
+
+<span style="text-decoration: overline">p</span> ::= (p<sub>1</sub>, &hellip;, p<sub>n</sub>) | ()
+
+q ::= f <span style="text-decoration: overline">p</span>
+    | q.d <span style="text-decoration: overline">p</span>
+
+D ::= data p where {c <span style="text-decoration: overline">T</span>:P}
+    | codata N where {N.d <span style="text-decoration: overline">T</span>:T}
+    | function f <span style="text-decoration: overline">T</span>:T where {q = e}
+
+Program ::= {D}
+</pre>

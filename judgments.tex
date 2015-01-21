@@ -1,0 +1,97 @@
+% Mappings
+
+\mu (P, c) = \overline{T} \\
+\nu (N, d) = \overline{T} \rightarrow T \\
+\Sigma (f) = \overline{T} \rightarrow T \\
+
+% Judgements
+
+\boxed{\Delta \vdash e:T} \; \mbox{In context} \, \Delta \mbox{, term e can be of type T.}
+\boxed{\Delta \vdash p \Leftarrow T} \; \mbox{Pattern p can be of type T, yielding context} \, \Delta .
+\boxed{\Delta | f \vdash p \Leftarrow T} \; \mbox{Copattern q can elimiate application of f into type T, yielding context} \, \Delta .
+
+% http://tex.stackexchange.com/questions/68368/how-to-write-inference-rules-if-we-are-having-two-antecedents
+
+\begin{array}{c}
+\Delta (x) = T
+\\ \hline
+\Delta \vdash x:T
+\end{array}
+\; T_{\mbox{Var}}
+
+\begin{array}{c}
+\Sigma (f) = \overline{T} \rightarrow T
+\quad
+\Delta \vdash \overline{e}:\overline{T}
+\\ \hline
+\Delta \vdash f \; \overline{e}:T
+\end{array}
+\; T_{\mbox{App}}
+
+\begin{array}{c}
+\mu (P, c) = \overline{T}
+\quad
+\Delta \vdash \overline{e}:\overline{T}
+\\ \hline
+\Delta \vdash c \; \overline{e}:P
+\end{array}
+\; T_{\mbox{Const}}
+
+\begin{array}{c}
+\nu (N, d) = \overline{T} \rightarrow T
+\quad
+\Delta \vdash e:N
+\quad
+\Delta \vdash \overline{e}:\overline{T}
+\\ \hline
+\Delta \vdash e.d \; \overline{e}:T
+\end{array}
+\; T_{\mbox{Dest}}
+
+\begin{array}{c}
+\\ \hline
+x:T \vdash x \Leftarrow T
+\end{array}
+\; P_{\mbox{Var}}
+
+\begin{array}{c}
+\mu (P, c) = \overline{T}
+\quad
+\Delta \vdash \overline{p} \Leftarrow \overline{T}
+\\ \hline
+\Delta \vdash c \; \overline{p} \Leftarrow P
+\end{array}
+\; P_{\mbox{Const}}
+
+\begin{array}{c}
+\Sigma (f) = \overline{T} \rightarrow T
+\quad
+\Delta \vdash \overline{p} \Leftarrow \overline{T}
+\\ \hline
+\Delta | f \vdash f \; \overline{p} \Leftarrow T
+\end{array}
+\; Q_{\mbox{App}}
+
+\begin{array}{c}
+\nu (N, d) = \overline{T} \rightarrow T
+\quad
+\Delta | f \vdash q \Leftarrow N
+\quad
+\Delta \vdash \overline{p} \Leftarrow \overline{T}
+\\ \hline
+\Delta | f \vdash q.d \; \overline{p} \Leftarrow T
+\end{array}
+\; Q_{\mbox{Dest}}
+
+\begin{array}{c}
+\Delta | f \vdash q \Leftarrow T
+\quad
+\Delta \vdash e:T
+\\ \hline
+\mbox{function} \; f \; \overline{T}:T \; \mbox{where} \; q=e
+\end{array}
+\; D_{\mbox{Fun}}
+
+% D_Data
+
+Data and function definitions must have unique names within the program. They may use all previously defined names, plus their own for recursion. The P, N, and f respectively must be identical within a definition.
