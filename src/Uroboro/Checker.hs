@@ -83,7 +83,7 @@ checkPP p (PPCon name args) t = case find match (constructors p) of
 
 -- |Typecheck a copattern. Takes hole type.
 checkPQ :: Program -> PQ -> PTSig -> Either String TQ
-checkPQ p (PQApp name args) (_, (argTypes, returnType)) = do
+checkPQ p (PQApp name args) (_, (argTypes, returnType)) = do    -- TODO check that app name matches hole
     targs <- zipStrict (checkPP p) args argTypes
     return $ TQApp returnType name targs
 checkPQ p (PQDes name args inner) s = do
@@ -163,7 +163,7 @@ inferPExp p c (PDes name args inner) = do
 typeName :: Type -> Identifier
 typeName (Type n) = n
 
--- |Typecheck a rule against the function#s signature.
+-- |Typecheck a rule against the function's signature.
 checkPTRule :: Program -> PTSig -> PTRule -> Either String Rule
 checkPTRule p s (PTRule left right) = do
     tleft <- checkPQ p left s
