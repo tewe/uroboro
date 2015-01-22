@@ -1,8 +1,30 @@
-function addTwo(): TwoIntToInt where
-    addTwo().apply(a, zero()) = a
-    addTwo().apply(a, succ(b)) = addTwo().apply(succ(a), b)
+{-
+Self-contained Fibonacci number generator.
+-}
 
-function fib(): StreamOfInt where
+data Nat where
+    zero() : Nat
+    succ(Nat) : Nat
+
+function one() : Nat where
+    one() = succ(zero())  -- for readability
+
+codata BinOp where
+    BinOp.apply(Nat, Nat) : Nat
+
+function add() : BinOp where
+    add().apply(a, zero())  = a
+    add().apply(a, succ(b)) = add().apply(succ(a), b)
+
+codata Stream where
+    Stream.head() : Nat
+    Stream.tail() : Stream
+
+function zipWith(BinOp, Stream, Stream) : Stream where
+    zipWith(f, a, b).head() = f.apply(a.head(), b.head())
+    zipWith(f, a, b).tail() = zipWith(f, a.tail(), b.tail())
+
+function fib(): Stream where
     fib().head() = zero()
-    fib().tail().head() = succ(zero())
-    fib().tail().tail() = zipWith(addTwo(), fib(), fib().tail())
+    fib().tail().head() = one()
+    fib().tail().tail() = zipWith(add(), fib(), fib().tail())
