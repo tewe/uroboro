@@ -1,0 +1,25 @@
+{- Requires fib.uro -}
+
+codata UnOp where
+  UnOp.apply(Nat): Nat
+
+function add1(): UnOp where
+  add1().apply(x) = succ(x)
+
+data List where
+  empty(): List
+  cons(Nat, List): List
+
+function map(UnOp, List): List where
+  map(f, empty()) = empty()
+  map(f, cons(x, xs)) = cons(f.apply(x), map(f, xs))
+
+function takeN(Nat, Stream): List where
+  takeN(zero(), f)  = empty()
+  takeN(succ(n), f) = cons(f.head(), takeN(n, f.tail()))
+
+function six(): Nat where
+  six() = succ(succ(succ(succ(succ(succ(zero()))))))
+
+function test(): List where
+  test() = map(add1(), takeN(six(), fib()))
