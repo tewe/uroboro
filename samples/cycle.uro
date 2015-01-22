@@ -1,4 +1,21 @@
-function cycleNats(Int): StreamOfInt where
+data Nat where
+    zero() : Nat
+    succ(Nat) : Nat
+
+function one() : Nat where
+    one() = succ(zero())
+
+function two() : Nat where
+    two() = succ(one())
+
+function N() : Nat where
+    N() = two()         -- configuration
+
+codata Stream where
+    Stream.head() : Nat
+    Stream.tail() : Stream
+
+function cycleNats(Nat) : Stream where
     cycleNats(x).head()       = x
-    cycleNats(zero()).tail()  = cycleNats(succ(succ(succ(zero())))) -- N = 3
+    cycleNats(zero()).tail()  = cycleNats(N())
     cycleNats(succ(x)).tail() = cycleNats(x)
