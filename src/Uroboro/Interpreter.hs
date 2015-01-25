@@ -54,7 +54,7 @@ qmatch :: E -> TQ -> Either String Substitution
 qmatch (EApp r as) (TQApp r' _ ps)
     | r /= r'                = error "Type checker guarantees hole type"
     | length as /= length ps = Left "Argument Length Mismatch"
-    | otherwise              = zipWithM pmatch as ps >>= return . concat -- TODO disjoint
+    | otherwise              = zipWithM pmatch as ps >>= return . concat
 qmatch (EDes r d as inner) (TQDes r' d' ps inner')
     | r /= r'                = Left "Type Mismatch"
     | d /= d'                = Left "Name Mismatch"

@@ -38,7 +38,7 @@ getOpt args = case break (== "--") args of
 -- |For a left value, print it and set the exit code.
 eitherIO :: Show a => Either a b -> IO b
 eitherIO (Left e)  = do
-    print e
+    print e             -- TODO strip surrounding quotes, or use custom errors
     exitFailure
 eitherIO (Right b) = return b
 

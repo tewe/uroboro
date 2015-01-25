@@ -2,14 +2,15 @@
 
 \mu (P, c) = \overline{T} \\
 \nu (N, d) = \overline{T} \rightarrow T \\
-\Sigma (f) = \overline{T} \rightarrow T \\
+\Sigma (f) = \overline{T} \rightarrow T
+
 \mbox{Rules}(f) = \{q \mapsto e\}
 
 % Judgements
 
 \boxed{\Delta \vdash e:T} \; \mbox{In context} \, \Delta \mbox{, term e can be of type T.}
 \boxed{\Delta \vdash p \Leftarrow T} \; \mbox{Pattern p can be of type T, yielding context} \, \Delta .
-\boxed{\Delta | f \vdash p \Leftarrow T} \; \mbox{Copattern q can elimiate application of f into type T, yielding context} \, \Delta .
+\boxed{\Delta | f \vdash q \Leftarrow T} \; \mbox{Copattern q can elimiate application of f into type T, yielding context} \, \Delta .
 \boxed{e =^? p \searrow \sigma} \; \mbox{Term e matches pattern p, yielding substitution} \, \sigma .
 \boxed{E =^? q \searrow \sigma} \; \mbox{Context E matches copattern q, yielding substitution} \, \sigma .
 
@@ -41,9 +42,9 @@
 \; T_{\mbox{Const}}
 
 \begin{array}{c}
-\nu (N, d) = \overline{T} \rightarrow T
-\quad
 \Delta \vdash e:N
+\quad
+\nu (N, d) = \overline{T} \rightarrow T
 \quad
 \Delta \vdash \overline{e}:\overline{T}
 \\ \hline
@@ -76,9 +77,9 @@ x:T \vdash x \Leftarrow T
 \; Q_{\mbox{App}}
 
 \begin{array}{c}
-\nu (N, d) = \overline{T} \rightarrow T
-\quad
 \Delta | f \vdash q \Leftarrow N
+\quad
+\nu (N, d) = \overline{T} \rightarrow T
 \quad
 \Delta \vdash \overline{p} \Leftarrow \overline{T}
 \\ \hline

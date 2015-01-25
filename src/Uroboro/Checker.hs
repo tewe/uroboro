@@ -16,7 +16,7 @@ module Uroboro.Checker
     ) where
 
 import Control.Monad (foldM, zipWithM)
-import Data.List ((\\), find, nub)
+import Data.List ((\\), find, nub, nubBy)
 
 import Uroboro.Tree
     (
@@ -56,6 +56,12 @@ emptyProgram = Program [] [] [] [] []
 -- |Types of the variables bound in a pattern.
 type Context = [(Identifier, Type)]
 
+-- |Only keep the first type for each identifier.
+nubContext :: Context -> Context
+nubContext c = nubBy f c
+  where
+    f (a, _) (b, _) = a == b
+
 -- |Extract variable types from a typed pattern.
 tpContext :: TP -> Context
 tpContext (TPVar t n) = [(n, t)]
@@ -83,9 +89,11 @@ checkPP p (PPCon name args) t = case find match (constructors p) of
 
 -- |Typecheck a copattern. Takes hole type.
 checkPQ :: Program -> PQ -> PTSig -> Either String TQ
-checkPQ p (PQApp name args) (_, (argTypes, returnType)) = do    -- TODO check that app name matches hole
-    targs <- zipStrict (checkPP p) args argTypes
-    return $ TQApp returnType name targs
+checkPQ p (PQApp name args) (name', (argTypes, returnType))
+    | name == name' = do
+        targs <- zipStrict (checkPP p) args argTypes
+        return $ TQApp returnType name targs
+    | otherwise     = Left "Definition Mismatch"
 checkPQ p (PQDes name args inner) s = do
     tinner <- checkPQ p inner s
     case find (match (tqReturnType tinner)) (destructors p) of
@@ -134,7 +142,7 @@ inferPExp :: Program -> Context -> PExp -> Either String TExp
 inferPExp _ context (PVar name) = case lookup name context of
     Nothing  -> Left "Unbound Variable"
     Just typ -> Right (TVar typ name)
-inferPExp p c (PApp name args) = case lookup name (functions p) of  -- TODO catch ambiguous
+inferPExp p c (PApp name args) = case lookup name (functions p) of
     Just (argTypes, returnType) ->
         zipStrict (checkPExp p c) args argTypes >>= return . TApp returnType name
     Nothing -> case find match (constructors p) of
@@ -167,8 +175,13 @@ typeName (Type n) = n
 checkPTRule :: Program -> PTSig -> PTRule -> Either String Rule
 checkPTRule p s (PTRule left right) = do
     tleft <- checkPQ p left s
-    tright <- checkPExp p (tqContext tleft) right (tqReturnType tleft)
-    return (tleft, tright)
+    let c = tqContext tleft
+    tright <- checkPExp p c right (tqReturnType tleft)
+    let d = nubContext c
+    if length c == length d then
+        return (tleft, tright)
+    else
+        Left "Shadowed Variable"
 
 -- |Fold to typecheck definitions.
 checkPT :: Program -> PT -> Either String Program

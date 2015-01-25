@@ -1,6 +1,4 @@
 <pre>
-{one or more, separated by whitespace}
-
 P ::= data type names
 N ::= codata type names
 f ::= function names
@@ -26,11 +24,13 @@ p ::= x
 q ::= f <span style="text-decoration: overline">p</span>
     | q.d <span style="text-decoration: overline">p</span>
 
-D ::= data p where {c <span style="text-decoration: overline">T</span>:P}
+D ::= data P where {c <span style="text-decoration: overline">T</span>:P}
     | codata N where {N.d <span style="text-decoration: overline">T</span>:T}
     | function f <span style="text-decoration: overline">T</span>:T where {q = e}
 
 Program ::= {D}
+
+{one or more, separated by whitespace}
 
 E ::= f <span style="text-decoration: overline">e</span>
     | E.d <span style="text-decoration: overline">e</span>

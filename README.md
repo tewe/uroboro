@@ -6,7 +6,7 @@ An Implementation of a Language with Pattern and Copattern Matching
 	cabal sandbox init
 	cabal install --jobs --enable-tests
 	cabal test
-	cabal run -- samples/prelude.uro samples/fib.uro -- "fib().head()"
+	cabal run -- samples/fib.uro -- "fib().head()"
 
 ## Documentation
 
@@ -15,9 +15,9 @@ An Implementation of a Language with Pattern and Copattern Matching
 
 ## Testing
 
-	ghci test/Spec.hs
+	cabal exec -- ghci test/Spec.hs
 	:main
 	:reload
 
-	ghci -Wall test/Uroboro/ParserSpec.hs
+	cabal exec -- ghci -Wall test/Uroboro/ParserSpec.hs
 	hspec spec
