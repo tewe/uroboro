@@ -16,9 +16,13 @@ module Uroboro.Parser
     ) where
 
 import Control.Applicative ((<*), (<*>), (*>))
+import Control.Arrow (left)
 import Control.Monad (liftM)
 
+import Data.List (intercalate)
+
 import Text.Parsec
+import Text.Parsec.Error (errorMessages, showErrorMessages)
 
 import Uroboro.Token
 import Uroboro.Tree
@@ -34,12 +38,12 @@ import Uroboro.Tree
     )
 
 -- | Parse whole file.
-parseFile :: FilePath -> String -> Either ParseError [PT]
-parseFile fname input = parse parseDef fname input
+parseFile :: FilePath -> String -> Either Error [PT]
+parseFile fname input = left convertError $ parse parseDef fname input
 
 -- | Parse expression.
-parseExpression :: FilePath -> String -> Either ParseError PExp
-parseExpression fname input = parse parseExp fname input
+parseExpression :: FilePath -> String -> Either Error PExp
+parseExpression fname input = left convertError $ parse parseExp fname input
 
 -- |Parser without user state.
 type Parser = Parsec String ()
@@ -114,3 +118,27 @@ parseDef = exactly $ many (choice [pos, neg, fun])
 
     where1 :: Parser a -> Parser [a]
     where1 a = reserved "where" *> many1 a
+
+-- | Custom error type (to modify the Show instance)
+data Error = MakeError FilePath Int Int String
+
+instance Show Error where
+  show (MakeError name line column message) =
+    intercalate ":"
+      [ name
+      , show line
+      , show column
+      , " Syntax Error"
+      ] ++ (unlines $ map ("  " ++) $ lines $ message)
+
+-- | Convert error to custom error type
+convertError :: ParseError -> Error
+convertError err = MakeError name line column messages where
+  pos = errorPos err
+  name = sourceName pos
+  line = sourceLine pos
+  column = sourceColumn pos
+  messages = showErrorMessages
+               "or" "unknown parse error" "expecting"
+               "unexpected" "end of input"
+               (errorMessages err)
