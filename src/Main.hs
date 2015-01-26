@@ -10,15 +10,13 @@ module Main
     , Mode(..)
     ) where
 
-import Control.Monad (foldM, foldM_, zipWithM)
+import Control.Monad (foldM, foldM_, forM, zipWithM)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
-import Text.Parsec (parse)
-
 import Uroboro.Checker (checkPT, emptyProgram, inferPExp, rules)
 import Uroboro.Interpreter (eval)
-import Uroboro.Parser (parseDef, parseExp, Parser)
+import Uroboro.Parser (parseFile, parseExpression)
 import Uroboro.PrettyPrint (render)
 import Uroboro.Tree (PT)
 
@@ -42,14 +40,12 @@ eitherIO (Left e)  = do
     exitFailure
 eitherIO (Right b) = return b
 
--- |Turn Either monad from parser into IO monad by communicating errors to the user.
-parseIO :: Parser a -> String -> String -> IO a
-parseIO parser fname input = eitherIO $ parse parser fname input
-
 -- |Load libraries.
 parseFiles :: [FilePath] -> IO [PT]
 parseFiles paths = do
-    lol <- mapM readFile paths >>= zipWithM (parseIO parseDef) paths
+    lol <- forM paths $ \path -> do
+      input <- readFile path
+      eitherIO $ parseFile path input
     return $ concat lol
 
 -- |Parse given source code, typecheck it, and optionally run it.
@@ -60,7 +56,7 @@ main = do
     case getOpt args of
         Evaluate paths input -> do
             defs  <- parseFiles paths
-            pexp  <- eitherIO $ parse parseExp "command line" input
+            pexp  <- eitherIO $ parseExpression "command line" input
 
             prog <- eitherIO $ foldM checkPT emptyProgram defs
             texp  <- eitherIO $ inferPExp prog [] pexp

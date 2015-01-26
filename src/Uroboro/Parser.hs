@@ -5,7 +5,11 @@ Parsec applicative style.
 -}
 module Uroboro.Parser
     (
-      parseDef
+      -- * Parsing Uroboro
+      parseFile
+    , parseExpression
+      -- * Individual parsers
+    , parseDef
     , parseExp
     , Parser
     , pq
@@ -28,6 +32,14 @@ import Uroboro.Tree
     , PTRule(..)
     , Type(..)
     )
+
+-- | Parse whole file.
+parseFile :: FilePath -> String -> Either ParseError [PT]
+parseFile fname input = parse parseDef fname input
+
+-- | Parse expression.
+parseExpression :: FilePath -> String -> Either ParseError PExp
+parseExpression fname input = parse parseExp fname input
 
 -- |Parser without user state.
 type Parser = Parsec String ()
