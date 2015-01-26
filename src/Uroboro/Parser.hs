@@ -55,9 +55,13 @@ pexp = choice [des, app, var] <?> "expression"
     app = try $ liftM PApp identifier <*> args pexp
     var = liftM PVar identifier
 
+-- | Use up all input for one parser.
+exactly :: Parser a -> Parser a
+exactly parser = whiteSpace *> parser <* eof
+
 -- |Parse exactly one expression.
 parseExp :: Parser PExp
-parseExp = whiteSpace *> pexp <* eof
+parseExp = exactly pexp
 
 -- |Parse pattern.
 pp :: Parser PP
@@ -75,7 +79,7 @@ pq = choice [des, app] <?> "copattern"
 
 -- |Parse whole file.
 parseDef :: Parser [PT]
-parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
+parseDef = exactly $ many (choice [pos, neg, fun])
   where
     pos = definition "data" PTPos <*> where1 con
     neg = definition "codata" PTNeg <*> where1 des
