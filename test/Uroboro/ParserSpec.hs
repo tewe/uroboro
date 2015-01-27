@@ -6,7 +6,7 @@ module Uroboro.ParserSpec
     ) where
 
 import Data.Either (isRight)
-import Text.Parsec (parse)
+import Text.Parsec (parse, ParseError)
 
 import Test.Hspec
 
@@ -28,7 +28,7 @@ spec = do
         it "gets selector order right" $ do
             parse pq "" "fib().tail().head() = succ(zero())" `shouldSatisfy` (\x ->
               case x of
-                Right (PQDes "head" [] (PQDes "tail" [] (PQApp "fib" []))) -> True
+                Right (PQDes _ "head" [] (PQDes _ "tail" [] (PQApp _ "fib" []))) -> True
                 _ -> False)
     describe "parser" $ do
         it "recognizes the prelude" $ do
@@ -38,19 +38,19 @@ spec = do
         it "observes argument order (constructor)" $ do
             let source = "data Int where zero(): Int"
             parse parseDef "" source `shouldSatisfy` (\x -> case x of
-              Right [PTPos (Type "Int") [PTCon (Type "Int") "zero" []]] -> True
+              Right [PTPos _ (Type "Int") [PTCon _ (Type "Int") "zero" []]] -> True
               _ -> False)
         it "observes argument order (destructor)" $ do
             let source = "codata StreamOfInt where StreamOfInt.head(): Int"
             parse parseDef "" source `shouldSatisfy` (\x -> case x of
-              Right [PTNeg (Type "StreamOfInt") [PTDes (Type "Int") "head" [] (Type "StreamOfInt")]] -> True
+              Right [PTNeg _ (Type "StreamOfInt") [PTDes _ (Type "Int") "head" [] (Type "StreamOfInt")]] -> True
               _ -> False)
     describe "command line" $ do
         it "ignores whitespace" $ do
             parse parseExp "" "  x  " `shouldSatisfy` (\x -> case x of
-              Right (PVar "x") -> True
+              Right (PVar _ "x") -> True
               _ -> False)
         it "uses the longest match" $ do
             parse parseExp "" "x()" `shouldSatisfy` (\x -> case x of
-              Right (PApp "x" []) -> True
+              Right (PApp _ "x" []) -> True
               _ -> False)
