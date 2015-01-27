@@ -19,11 +19,10 @@ import Control.Applicative ((<*), (<*>), (*>))
 import Control.Arrow (left)
 import Control.Monad (liftM)
 
-import Data.List (intercalate)
-
 import Text.Parsec
 import Text.Parsec.Error (errorMessages, showErrorMessages)
 
+import Uroboro.Error
 import Uroboro.Token
 import Uroboro.Tree
     (
@@ -118,18 +117,6 @@ parseDef = exactly $ many (choice [pos, neg, fun])
 
     where1 :: Parser a -> Parser [a]
     where1 a = reserved "where" *> many1 a
-
--- | Custom error type (to modify the Show instance)
-data Error = MakeError FilePath Int Int String
-
-instance Show Error where
-  show (MakeError name line column message) =
-    intercalate ":"
-      [ name
-      , show line
-      , show column
-      , " Syntax Error"
-      ] ++ (unlines $ map ("  " ++) $ lines $ message)
 
 -- | Convert error to custom error type
 convertError :: ParseError -> Error
