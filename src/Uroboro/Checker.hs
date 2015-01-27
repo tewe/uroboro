@@ -47,7 +47,7 @@ data Program = Program {
     , functions    :: [PTSig] -- Always update functions and rules together.
     -- |Extract the end result of typechecking.
     , rules        :: Rules
-    } deriving (Eq, Show)
+    } deriving (Show)
 
 -- |Start value for folds.
 emptyProgram :: Program
