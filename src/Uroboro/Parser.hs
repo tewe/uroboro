@@ -118,13 +118,18 @@ parseDef = exactly $ many (choice [pos, neg, fun])
     where1 :: Parser a -> Parser [a]
     where1 a = reserved "where" *> many1 a
 
--- | Convert error to custom error type
-convertError :: ParseError -> Error
-convertError err = MakeError name line column messages where
-  pos = errorPos err
+-- | Convert location to custom location type
+convertLocation :: SourcePos -> Location
+convertLocation pos = MakeLocation name line column where
   name = sourceName pos
   line = sourceLine pos
   column = sourceColumn pos
+
+-- | Convert error to custom error type
+convertError :: ParseError -> Error
+convertError err = MakeError location messages where
+  pos = errorPos err
+  location = convertLocation pos
   messages = showErrorMessages
                "or" "unknown parse error" "expecting"
                "unexpected" "end of input"
