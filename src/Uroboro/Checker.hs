@@ -76,19 +76,19 @@ tqContext (TQDes _ _ args inner) = concat [tqContext inner, concat $ map tpConte
 
 -- |A zipWithM that requires identical lengths.
 zipStrict :: Location -> Location -> (a -> b -> Either Error c) -> [a] -> [b] -> Either Error [c]
-zipStrict loc loc' f a b
+zipStrict loc _loc' f a b
   | length a == length b = zipWithM f a b
   | otherwise            = Left (MakeError loc "Length Mismatch")
 
 -- |Typecheck a pattern
 checkPP :: Program -> PP -> Type -> Either Error TP
-checkPP _ (PPVar loc name) t = return (TPVar t name)
+checkPP _ (PPVar _loc name) t = return (TPVar t name)
 checkPP p (PPCon loc name args) t = case find match (constructors p) of
     Just (PTCon loc' _ _ argTypes) ->
         zipStrict loc loc' (checkPP p) args argTypes >>= return . TPCon t name
     Nothing -> Left (MakeError loc "Missing Definition")
   where
-    match (PTCon loc' returnType n _) = n == name && returnType == t
+    match (PTCon _loc' returnType n _) = n == name && returnType == t
 
 -- |Typecheck a copattern. Takes hole type.
 checkPQ :: Program -> PQ -> PTSig -> Either Error TQ
@@ -106,7 +106,7 @@ checkPQ p (PQDes loc name args inner) s = do
             targs <- zipStrict loc loc' (checkPP p) args argTypes
             return $ TQDes returnType name targs tinner
   where
-    match t (PTDes loc' _ n _ innerType) = n == name && innerType == t
+    match t (PTDes _loc' _ n _ innerType) = n == name && innerType == t
 
 -- |The type a copattern matches.
 tqReturnType :: TQ -> Type
@@ -129,7 +129,7 @@ checkPExp p c (PApp loc name args) t = case lookup name (functions p) of
             zipStrict loc loc'  (checkPExp p c) args argTypes >>= return . TCon t name
         Nothing -> Left (MakeError loc "Missing Definition")
   where
-    match (PTCon loc' returnType n _) = n == name && returnType == t
+    match (PTCon _loc' returnType n _) = n == name && returnType == t
 checkPExp p c (PDes loc name args inner) t = case find match (destructors p) of
     Nothing -> Left $ MakeError loc $
         "Missing Definition: no destructor to get " ++ typeName t ++ " from " ++ name
@@ -138,7 +138,7 @@ checkPExp p c (PDes loc name args inner) t = case find match (destructors p) of
         targs <- zipStrict loc loc' (checkPExp p c) args argTypes
         return $ TDes t name targs tinner
   where
-    match (PTDes loc' r n a _) = n == name && r == t && length a == length args
+    match (PTDes _loc' r n a _) = n == name && r == t && length a == length args
 
 -- |Infer the type of a term.
 inferPExp :: Program -> Context -> PExp -> Either Error TExp
@@ -153,7 +153,7 @@ inferPExp p c (PApp loc name args) = case lookup name (functions p) of
             zipStrict loc loc' (checkPExp p c) args argTypes >>= return . TCon returnType name
         Nothing -> Left (MakeError loc "Missing Definition")
   where
-    match (PTCon loc' _ n _) = n == name
+    match (PTCon _loc' _ n _) = n == name
 inferPExp p c (PDes loc name args inner) = do
     tinner <- inferPExp p c inner
     case find (match (texpReturnType tinner)) (destructors p) of
@@ -197,8 +197,8 @@ checkPT prog@(Program names cons _ _ _) (PTPos loc name cons')
         , constructors = cons ++ cons'
         }
   where
-    mismatch (PTCon loc' returnType _ _) = returnType /= name
-    missing (PTCon loc' _ _ args)        = (nub args) \\ (name:names) /= []
+    mismatch (PTCon _loc' returnType _ _) = returnType /= name
+    missing (PTCon _loc' _ _ args)        = (nub args) \\ (name:names) /= []
 checkPT prog@(Program names _ des _ _) (PTNeg loc name des')
     | name `elem` names = Left (MakeError loc "Shadowed Definition") 
     | any mismatch des' = Left (MakeError loc "Definition Mismatch") 
@@ -210,8 +210,8 @@ checkPT prog@(Program names _ des _ _) (PTNeg loc name des')
         , destructors = des ++ des'
         }
   where
-    mismatch (PTDes loc' _ _ _ innerType) = innerType /= name
-    missing (PTDes loc' _ _ args _)       = (nub args) \\ (name:names) /= []
+    mismatch (PTDes _loc' _ _ _ innerType) = innerType /= name
+    missing (PTDes _loc' _ _ args _)       = (nub args) \\ (name:names) /= []
 checkPT prog@(Program _ _ _ funs rulz) (PTFun loc name argTypes returnType rs)
     | any clash rulz     = Left (MakeError loc "Shadowed Definition")
     | otherwise = do
