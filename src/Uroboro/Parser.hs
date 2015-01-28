@@ -5,17 +5,24 @@ Parsec applicative style.
 -}
 module Uroboro.Parser
     (
-      parseDef
+      -- * Parsing Uroboro
+      parseFile
+    , parseExpression
+      -- * Individual parsers
+    , parseDef
     , parseExp
     , Parser
     , pq
     ) where
 
 import Control.Applicative ((<*), (<*>), (*>))
+import Control.Arrow (left)
 import Control.Monad (liftM)
 
 import Text.Parsec
+import Text.Parsec.Error (errorMessages, showErrorMessages)
 
+import Uroboro.Error
 import Uroboro.Token
 import Uroboro.Tree
     (
@@ -28,6 +35,14 @@ import Uroboro.Tree
     , PTRule(..)
     , Type(..)
     )
+
+-- | Parse whole file.
+parseFile :: FilePath -> String -> Either Error [PT]
+parseFile fname input = left convertError $ parse parseDef fname input
+
+-- | Parse expression.
+parseExpression :: FilePath -> String -> Either Error PExp
+parseExpression fname input = left convertError $ parse parseExp fname input
 
 -- |Parser without user state.
 type Parser = Parsec String ()
@@ -55,9 +70,13 @@ pexp = choice [des, app, var] <?> "expression"
     app = try $ liftM PApp identifier <*> args pexp
     var = liftM PVar identifier
 
+-- | Use up all input for one parser.
+exactly :: Parser a -> Parser a
+exactly parser = whiteSpace *> parser <* eof
+
 -- |Parse exactly one expression.
 parseExp :: Parser PExp
-parseExp = whiteSpace *> pexp <* eof
+parseExp = exactly pexp
 
 -- |Parse pattern.
 pp :: Parser PP
@@ -75,7 +94,7 @@ pq = choice [des, app] <?> "copattern"
 
 -- |Parse whole file.
 parseDef :: Parser [PT]
-parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
+parseDef = exactly $ many (choice [pos, neg, fun])
   where
     pos = definition "data" PTPos <*> where1 con
     neg = definition "codata" PTNeg <*> where1 des
@@ -98,3 +117,20 @@ parseDef = whiteSpace *> many (choice [pos, neg, fun]) <* eof
 
     where1 :: Parser a -> Parser [a]
     where1 a = reserved "where" *> many1 a
+
+-- | Convert location to custom location type
+convertLocation :: SourcePos -> Location
+convertLocation pos = MakeLocation name line column where
+  name = sourceName pos
+  line = sourceLine pos
+  column = sourceColumn pos
+
+-- | Convert error to custom error type
+convertError :: ParseError -> Error
+convertError err = MakeError location messages where
+  pos = errorPos err
+  location = convertLocation pos
+  messages = showErrorMessages
+               "or" "unknown parse error" "expecting"
+               "unexpected" "end of input"
+               (errorMessages err)
