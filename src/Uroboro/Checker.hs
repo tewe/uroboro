@@ -18,6 +18,8 @@ module Uroboro.Checker
 import Control.Monad (foldM, zipWithM)
 import Data.List ((\\), find, nub, nubBy)
 
+import Uroboro.Error
+
 import Uroboro.Tree
     (
       Identifier
@@ -37,7 +39,7 @@ import Uroboro.Tree
     )
 
 -- |Signature of a function definition.
-type PTSig = (Identifier, ([Type], Type))
+type PTSig = (Identifier, (Location, [Type], Type))
 
 -- |State of the typechecker.
 data Program = Program {
@@ -89,7 +91,7 @@ checkPP p (PPCon loc name args) t = case find match (constructors p) of
 
 -- |Typecheck a copattern. Takes hole type.
 checkPQ :: Program -> PQ -> PTSig -> Either String TQ
-checkPQ p (PQApp loc name args) (name', (argTypes, returnType))
+checkPQ p (PQApp loc name args) (name', (loc', argTypes, returnType))
     | name == name' = do
         targs <- zipStrict (checkPP p) args argTypes
         return $ TQApp returnType name targs
@@ -118,7 +120,7 @@ checkPExp _ c (PVar loc n) t = case lookup n c of
                 " expected to be " ++ typeName t ++ " but is actually " ++ typeName t'
     Nothing             -> Left $ "Unbound Variable: " ++ n
 checkPExp p c (PApp loc name args) t = case lookup name (functions p) of
-    Just (argTypes, returnType) | returnType == t ->
+    Just (loc', argTypes, returnType) | returnType == t ->
                 zipStrict (checkPExp p c) args argTypes >>= return . TApp returnType name
         | otherwise -> Left "Type Mismatch"
     Nothing -> case find match (constructors p) of
@@ -143,7 +145,7 @@ inferPExp _ context (PVar loc name) = case lookup name context of
     Nothing  -> Left "Unbound Variable"
     Just typ -> Right (TVar typ name)
 inferPExp p c (PApp loc name args) = case lookup name (functions p) of
-    Just (argTypes, returnType) ->
+    Just (loc', argTypes, returnType) ->
         zipStrict (checkPExp p c) args argTypes >>= return . TApp returnType name
     Nothing -> case find match (constructors p) of
         Just (PTCon loc returnType _ argTypes) ->
@@ -211,7 +213,7 @@ checkPT prog@(Program names _ des _ _) (PTNeg loc name des')
 checkPT prog@(Program _ _ _ funs rulz) (PTFun loc name argTypes returnType rs)
     | any clash rulz     = Left "Shadowed Definition"
     | otherwise = do
-        let sig = (name, (argTypes, returnType))
+        let sig = (name, (loc, argTypes, returnType))
         let recursive = prog {
               functions = (sig:funs)
             }
