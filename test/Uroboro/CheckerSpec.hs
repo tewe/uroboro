@@ -21,6 +21,7 @@ import Uroboro.Checker
     , inferPExp
     , Program
     )
+import Uroboro.Error
 import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Tree (TExp(..), Type(..))
 import Utils (parseString)
@@ -46,8 +47,8 @@ c = [
     ]
 
 -- |Assert error message
-shouldFail :: Show a => Either String a -> String -> Expectation
-Left msg `shouldFail` prefix = takeWhile (/= ':') msg `shouldBe` prefix
+shouldFail :: Show a => Either Error a -> String -> Expectation
+Left (MakeError _ msg) `shouldFail` prefix = takeWhile (/= ':') msg `shouldBe` prefix
 Right  x `shouldFail` prefix = expectationFailure
     ("expected: " ++ prefix ++ "\n but got: " ++ show x)
 
