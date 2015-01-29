@@ -18,6 +18,8 @@ module Uroboro.Checker
 import Control.Monad (foldM, zipWithM)
 import Data.List ((\\), find, nub, nubBy)
 
+import Uroboro.Error
+
 import Uroboro.Tree
     (
       Identifier
@@ -37,7 +39,7 @@ import Uroboro.Tree
     )
 
 -- |Signature of a function definition.
-type PTSig = (Identifier, ([Type], Type))
+type PTSig = (Identifier, (Location, [Type], Type))
 
 -- |State of the typechecker.
 data Program = Program {
@@ -47,7 +49,7 @@ data Program = Program {
     , functions    :: [PTSig] -- Always update functions and rules together.
     -- |Extract the end result of typechecking.
     , rules        :: Rules
-    } deriving (Eq, Show)
+    } deriving (Show)
 
 -- |Start value for folds.
 emptyProgram :: Program
@@ -73,37 +75,38 @@ tqContext (TQApp _ _ args) = concat $ map tpContext args
 tqContext (TQDes _ _ args inner) = concat [tqContext inner, concat $ map tpContext args]
 
 -- |A zipWithM that requires identical lengths.
-zipStrict :: (a -> b -> Either String c) -> [a] -> [b] -> Either String [c]
-zipStrict f a b | length a == length b = zipWithM f a b
-                | otherwise            = Left "Length Mismatch"
+zipStrict :: Location -> Location -> (a -> b -> Either Error c) -> [a] -> [b] -> Either Error [c]
+zipStrict loc _loc' f a b
+  | length a == length b = zipWithM f a b
+  | otherwise            = Left (MakeError loc "Length Mismatch")
 
 -- |Typecheck a pattern
-checkPP :: Program -> PP -> Type -> Either String TP
-checkPP _ (PPVar name) t = return (TPVar t name)
-checkPP p (PPCon name args) t = case find match (constructors p) of
-    Just (PTCon _ _ argTypes) ->
-        zipStrict (checkPP p) args argTypes >>= return . TPCon t name
-    Nothing -> Left "Missing Definition"
+checkPP :: Program -> PP -> Type -> Either Error TP
+checkPP _ (PPVar _loc name) t = return (TPVar t name)
+checkPP p (PPCon loc name args) t = case find match (constructors p) of
+    Just (PTCon loc' _ _ argTypes) ->
+        zipStrict loc loc' (checkPP p) args argTypes >>= return . TPCon t name
+    Nothing -> Left (MakeError loc "Missing Definition")
   where
-    match (PTCon returnType n _) = n == name && returnType == t
+    match (PTCon _loc' returnType n _) = n == name && returnType == t
 
 -- |Typecheck a copattern. Takes hole type.
-checkPQ :: Program -> PQ -> PTSig -> Either String TQ
-checkPQ p (PQApp name args) (name', (argTypes, returnType))
+checkPQ :: Program -> PQ -> PTSig -> Either Error TQ
+checkPQ p (PQApp loc name args) (name', (loc', argTypes, returnType))
     | name == name' = do
-        targs <- zipStrict (checkPP p) args argTypes
+        targs <- zipStrict loc loc' (checkPP p) args argTypes
         return $ TQApp returnType name targs
-    | otherwise     = Left "Definition Mismatch"
-checkPQ p (PQDes name args inner) s = do
+    | otherwise     = Left (MakeError loc "Definition Mismatch")
+checkPQ p (PQDes loc name args inner) s = do
     tinner <- checkPQ p inner s
     case find (match (tqReturnType tinner)) (destructors p) of
-        Nothing -> Left $
+        Nothing -> Left $ MakeError loc $
             "Missing Definition: " ++ (typeName $ tqReturnType tinner) ++ "." ++ name
-        Just (PTDes returnType _ argTypes _) -> do
-            targs <- zipStrict (checkPP p) args argTypes
+        Just (PTDes loc' returnType _ argTypes _) -> do
+            targs <- zipStrict loc loc' (checkPP p) args argTypes
             return $ TQDes returnType name targs tinner
   where
-    match t (PTDes _ n _ innerType) = n == name && innerType == t
+    match t (PTDes _loc' _ n _ innerType) = n == name && innerType == t
 
 -- |The type a copattern matches.
 tqReturnType :: TQ -> Type
@@ -111,52 +114,52 @@ tqReturnType (TQApp t _ _) = t
 tqReturnType (TQDes t _ _ _) = t
 
 -- |Typecheck a term.
-checkPExp :: Program -> Context -> PExp -> Type -> Either String TExp
-checkPExp _ c (PVar n) t = case lookup n c of
+checkPExp :: Program -> Context -> PExp -> Type -> Either Error TExp
+checkPExp _ c (PVar loc n) t = case lookup n c of
     Just t' | t' == t   -> return (TVar t n)
-            | otherwise -> Left $ "Type Mismatch: " ++ n ++
+            | otherwise -> Left $ MakeError loc $ "Type Mismatch: " ++ n ++
                 " expected to be " ++ typeName t ++ " but is actually " ++ typeName t'
-    Nothing             -> Left $ "Unbound Variable: " ++ n
-checkPExp p c (PApp name args) t = case lookup name (functions p) of
-    Just (argTypes, returnType) | returnType == t ->
-                zipStrict (checkPExp p c) args argTypes >>= return . TApp returnType name
-        | otherwise -> Left "Type Mismatch"
+    Nothing             -> Left $ MakeError loc $ "Unbound Variable: " ++ n
+checkPExp p c (PApp loc name args) t = case lookup name (functions p) of
+    Just (loc', argTypes, returnType) | returnType == t ->
+                zipStrict loc loc' (checkPExp p c) args argTypes >>= return . TApp returnType name
+        | otherwise -> Left (MakeError loc "Type Mismatch")
     Nothing -> case find match (constructors p) of
-        Just (PTCon _ _ argTypes) ->
-            zipStrict (checkPExp p c) args argTypes >>= return . TCon t name
-        Nothing -> Left "Missing Definition"
+        Just (PTCon loc' _ _ argTypes) ->
+            zipStrict loc loc'  (checkPExp p c) args argTypes >>= return . TCon t name
+        Nothing -> Left (MakeError loc "Missing Definition")
   where
-    match (PTCon returnType n _) = n == name && returnType == t
-checkPExp p c (PDes name args inner) t = case find match (destructors p) of
-    Nothing -> Left $
+    match (PTCon _loc' returnType n _) = n == name && returnType == t
+checkPExp p c (PDes loc name args inner) t = case find match (destructors p) of
+    Nothing -> Left $ MakeError loc $
         "Missing Definition: no destructor to get " ++ typeName t ++ " from " ++ name
-    Just (PTDes _ _ argTypes innerType) -> do
+    Just (PTDes loc' _ _ argTypes innerType) -> do
         tinner <- checkPExp p c inner innerType
-        targs <- zipStrict (checkPExp p c) args argTypes
+        targs <- zipStrict loc loc' (checkPExp p c) args argTypes
         return $ TDes t name targs tinner
   where
-    match (PTDes r n a _) = n == name && r == t && length a == length args
+    match (PTDes _loc' r n a _) = n == name && r == t && length a == length args
 
 -- |Infer the type of a term.
-inferPExp :: Program -> Context -> PExp -> Either String TExp
-inferPExp _ context (PVar name) = case lookup name context of
-    Nothing  -> Left "Unbound Variable"
+inferPExp :: Program -> Context -> PExp -> Either Error TExp
+inferPExp _ context (PVar loc name) = case lookup name context of
+    Nothing  -> Left (MakeError loc "Unbound Variable")
     Just typ -> Right (TVar typ name)
-inferPExp p c (PApp name args) = case lookup name (functions p) of
-    Just (argTypes, returnType) ->
-        zipStrict (checkPExp p c) args argTypes >>= return . TApp returnType name
+inferPExp p c (PApp loc name args) = case lookup name (functions p) of
+    Just (loc', argTypes, returnType) ->
+        zipStrict loc loc' (checkPExp p c) args argTypes >>= return . TApp returnType name
     Nothing -> case find match (constructors p) of
-        Just (PTCon returnType _ argTypes) ->
-            zipStrict (checkPExp p c) args argTypes >>= return . TCon returnType name
-        Nothing -> Left "Missing Definition"
+        Just (PTCon loc' returnType _ argTypes) ->
+            zipStrict loc loc' (checkPExp p c) args argTypes >>= return . TCon returnType name
+        Nothing -> Left (MakeError loc "Missing Definition")
   where
-    match (PTCon _ n _) = n == name
-inferPExp p c (PDes name args inner) = do
+    match (PTCon _loc' _ n _) = n == name
+inferPExp p c (PDes loc name args inner) = do
     tinner <- inferPExp p c inner
     case find (match (texpReturnType tinner)) (destructors p) of
-        Nothing -> Left "Missing Definition"
-        Just (PTDes returnType _ argTypes _) -> do
-            targs <- zipStrict (checkPExp p c) args argTypes
+        Nothing -> Left (MakeError loc "Missing Definition")
+        Just (PTDes loc' returnType _ argTypes _) -> do
+            targs <- zipStrict loc loc' (checkPExp p c) args argTypes
             return $ TDes returnType name targs tinner
   where
     texpReturnType :: TExp -> Type
@@ -165,15 +168,15 @@ inferPExp p c (PDes name args inner) = do
     texpReturnType (TCon t _ _) = t
     texpReturnType (TDes t _ _ _) = t
 
-    match t' (PTDes _ n _ t) = n == name && t == t'
+    match t' (PTDes _loc' _ n _ t) = n == name && t == t'
 
 -- |Identify a type to the user.
 typeName :: Type -> Identifier
 typeName (Type n) = n
 
 -- |Typecheck a rule against the function's signature.
-checkPTRule :: Program -> PTSig -> PTRule -> Either String Rule
-checkPTRule p s (PTRule left right) = do
+checkPTRule :: Program -> PTSig -> PTRule -> Either Error Rule
+checkPTRule p s (PTRule loc left right) = do
     tleft <- checkPQ p left s
     let c = tqContext tleft
     tright <- checkPExp p c right (tqReturnType tleft)
@@ -181,37 +184,38 @@ checkPTRule p s (PTRule left right) = do
     if length c == length d then
         return (tleft, tright)
     else
-        Left "Shadowed Variable"
+        Left (MakeError loc "Shadowed Variable")
 
 -- |Fold to typecheck definitions.
-checkPT :: Program -> PT -> Either String Program
-checkPT prog@(Program names cons _ _ _) (PTPos name cons')
-    | name `elem` names  = Left "Shadowed Definition"
-    | any mismatch cons' = Left "Definition Mismatch"
-    | any missing cons'  = Left "Missing Definition"
+checkPT :: Program -> PT -> Either Error Program
+checkPT prog@(Program names cons _ _ _) (PTPos loc name cons')
+    | name `elem` names  = Left (MakeError loc "Shadowed Definition")
+    | any mismatch cons' = Left (MakeError loc "Definition Mismatch")
+    | any missing cons'  = Left (MakeError loc "Missing Definition")
     | otherwise          = Right prog {
           typeNames = (name:names)
         , constructors = cons ++ cons'
         }
   where
-    mismatch (PTCon returnType _ _) = returnType /= name
-    missing (PTCon _ _ args)        = (nub args) \\ (name:names) /= []
-checkPT prog@(Program names _ des _ _) (PTNeg name des')
-    | name `elem` names = Left "Shadowed Definition"
-    | any mismatch des' = Left "Definition Mismatch"
-    | any missing des'  = Left $ "Missing Definition: " ++ typeName name ++
+    mismatch (PTCon _loc' returnType _ _) = returnType /= name
+    missing (PTCon _loc' _ _ args)        = (nub args) \\ (name:names) /= []
+checkPT prog@(Program names _ des _ _) (PTNeg loc name des')
+    | name `elem` names = Left (MakeError loc "Shadowed Definition") 
+    | any mismatch des' = Left (MakeError loc "Definition Mismatch") 
+    | any missing des'  = Left $ MakeError loc $
+        "Missing Definition: " ++ typeName name ++
         " has a destructor with an unknown argument type"
     | otherwise         = Right prog {
           typeNames = (name:names)
         , destructors = des ++ des'
         }
   where
-    mismatch (PTDes _ _ _ innerType) = innerType /= name
-    missing (PTDes _ _ args _)       = (nub args) \\ (name:names) /= []
-checkPT prog@(Program _ _ _ funs rulz) (PTFun name argTypes returnType rs)
-    | any clash rulz     = Left "Shadowed Definition"
+    mismatch (PTDes _loc' _ _ _ innerType) = innerType /= name
+    missing (PTDes _loc' _ _ args _)       = (nub args) \\ (name:names) /= []
+checkPT prog@(Program _ _ _ funs rulz) (PTFun loc name argTypes returnType rs)
+    | any clash rulz     = Left (MakeError loc "Shadowed Definition")
     | otherwise = do
-        let sig = (name, (argTypes, returnType))
+        let sig = (name, (loc, argTypes, returnType))
         let recursive = prog {
               functions = (sig:funs)
             }
@@ -223,5 +227,5 @@ checkPT prog@(Program _ _ _ funs rulz) (PTFun name argTypes returnType rs)
     clash (name', _) = name' == name
 
 -- |Turn parser output into interpreter input.
-typecheck :: [PT] -> Either String Rules
+typecheck :: [PT] -> Either Error Rules
 typecheck defs = foldM checkPT emptyProgram defs >>= return . rules

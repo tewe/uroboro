@@ -21,6 +21,7 @@ import Uroboro.Checker
     , inferPExp
     , Program
     )
+import Uroboro.Error
 import Uroboro.Parser (parseDef, parseExp)
 import Uroboro.Tree (TExp(..), Type(..))
 import Utils (parseString)
@@ -46,8 +47,8 @@ c = [
     ]
 
 -- |Assert error message
-shouldFail :: Show a => Either String a -> String -> Expectation
-Left msg `shouldFail` prefix = takeWhile (/= ':') msg `shouldBe` prefix
+shouldFail :: Show a => Either Error a -> String -> Expectation
+Left (MakeError _ msg) `shouldFail` prefix = takeWhile (/= ':') msg `shouldBe` prefix
 Right  x `shouldFail` prefix = expectationFailure
     ("expected: " ++ prefix ++ "\n but got: " ++ show x)
 
@@ -100,23 +101,27 @@ spec = do
         it "infers construction" $ do
             p <- prelude
             e <- parseString parseExp "empty()"
-            let t = (Type "ListOfInt")
-            checkPExp p [] e t `shouldBe` Right (TCon t "empty" [])
+            checkPExp p [] e (Type "ListOfInt") `shouldSatisfy` (\x -> case x of
+              Right (TCon (Type "ListOfInt") "empty" []) -> True
+              _ -> False)
         it "infers applications" $ do
             p <- prelude
             e <- parseString parseExp "map(f, l)"
-            let t = (Type "ListOfInt")
-            checkPExp p c e t `shouldBe` Right (TApp t "map"
-                [TVar (Type "IntToInt") "f", TVar t "l"])
+            checkPExp p c e (Type "ListOfInt") `shouldSatisfy` (\x -> case x of
+              Right (TApp (Type "ListOfInt") "map"
+                [TVar (Type "IntToInt") "f", TVar (Type "ListOfInt") "l"]) -> True
+              _ -> False)
     describe "inferPExp" $ do
         it "infers construction" $ do
             p <- prelude
             e <- parseString parseExp "empty()"
-            let t = (Type "ListOfInt")
-            inferPExp p [] e `shouldBe` Right (TCon t "empty" [])
+            inferPExp p [] e `shouldSatisfy` (\x -> case x of
+              Right (TCon (Type "ListOfInt") "empty" []) -> True
+              _ -> False)
         it "infers applications" $ do
             p <- prelude
             e <- parseString parseExp "map(f, l)"
-            let t = (Type "ListOfInt")
-            inferPExp p c e `shouldBe` Right (TApp t "map"
-                [TVar (Type "IntToInt") "f", TVar t "l"])
+            inferPExp p c e `shouldSatisfy` (\x -> case x of
+              Right (TApp (Type "ListOfInt") "map"
+                [TVar (Type "IntToInt") "f", TVar (Type "ListOfInt") "l"]) -> True
+              _ -> False)

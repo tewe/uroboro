@@ -5,6 +5,8 @@ The program representations we work on.
 -}
 module Uroboro.Tree where
 
+import Uroboro.Error (Location)
+
 -- |This is used for type names, function names, constructor and destructor names,
 -- as well as variable names.
 type Identifier = String
@@ -19,44 +21,44 @@ newtype Type = Type Identifier deriving (Eq, Show)
 -- |Expression (Term).
 data PExp
     -- |Variable.
-    = PVar Identifier
+    = PVar Location Identifier
     -- |Constructor or function application.
-    | PApp Identifier [PExp]
+    | PApp Location Identifier [PExp]
     -- |Destructor application (Selection).
-    | PDes Identifier [PExp] PExp deriving (Eq, Show)
+    | PDes Location Identifier [PExp] PExp deriving (Show)
 
 -- |Pattern.
 data PP
     -- |Variable pattern.
-    = PPVar Identifier
+    = PPVar Location Identifier
     -- |Constructor pattern.
-    | PPCon Identifier [PP] deriving (Eq, Show)
+    | PPCon Location Identifier [PP] deriving (Show)
 
 -- |Copattern.
 data PQ
     -- |Hole pattern.
-    = PQApp Identifier [PP]
+    = PQApp Location Identifier [PP]
     -- |Destructor pattern.
-    | PQDes Identifier [PP] PQ deriving (Eq, Show)
+    | PQDes Location Identifier [PP] PQ deriving (Show)
 
 -- |Constructor definition.
-data PTCon = PTCon Type Identifier [Type] deriving (Eq, Show)
+data PTCon = PTCon Location Type Identifier [Type] deriving (Show)
 
 -- |Destructor definition.
 -- Return type first, type to destruct last.
-data PTDes = PTDes Type Identifier [Type] Type deriving (Eq, Show)
+data PTDes = PTDes Location Type Identifier [Type] Type deriving (Show)
 
 -- |Part of a function definition.
-data PTRule = PTRule PQ PExp deriving (Eq, Show)
+data PTRule = PTRule Location PQ PExp deriving (Show)
 
 -- |Definition.
 data PT
     -- |Data type.
-    = PTPos Type [PTCon]
+    = PTPos Location Type [PTCon]
     -- |Codata type.
-    | PTNeg Type [PTDes]
+    | PTNeg Location Type [PTDes]
     -- |Function.
-    | PTFun Identifier [Type] Type [PTRule] deriving (Eq, Show)
+    | PTFun Location Identifier [Type] Type [PTRule] deriving (Show)
 
 -- |
 -- = Typed Syntax Tree

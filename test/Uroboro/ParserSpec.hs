@@ -22,32 +22,35 @@ import Uroboro.Tree
     , Type(..)
     )
 
-instance Eq ParseError where
-    _ == _ = False
-
 spec :: Spec
 spec = do
     describe "pq" $ do
         it "gets selector order right" $ do
-            parse pq "" "fib().tail().head() = succ(zero())" `shouldBe` Right
-                (PQDes "head" [] (PQDes "tail" [] (PQApp "fib" [])))
+            parse pq "" "fib().tail().head() = succ(zero())" `shouldSatisfy` (\x ->
+              case x of
+                Right (PQDes _ "head" [] (PQDes _ "tail" [] (PQApp _ "fib" []))) -> True
+                _ -> False)
     describe "parser" $ do
-        let int = Type "Int"
         it "recognizes the prelude" $ do
             fname <- getDataFileName "samples/prelude.uro"
             input <- readFile fname
             parse parseDef fname input `shouldSatisfy` isRight
         it "observes argument order (constructor)" $ do
             let source = "data Int where zero(): Int"
-            let parsed = PTPos int [PTCon int "zero" []]
-            parse parseDef "" source `shouldBe` Right [parsed]
+            parse parseDef "" source `shouldSatisfy` (\x -> case x of
+              Right [PTPos _ (Type "Int") [PTCon _ (Type "Int") "zero" []]] -> True
+              _ -> False)
         it "observes argument order (destructor)" $ do
-            let stream = Type "StreamOfInt"
             let source = "codata StreamOfInt where StreamOfInt.head(): Int"
-            let parsed = PTNeg stream [PTDes int "head" [] stream]
-            parse parseDef "" source `shouldBe` Right [parsed]
+            parse parseDef "" source `shouldSatisfy` (\x -> case x of
+              Right [PTNeg _ (Type "StreamOfInt") [PTDes _ (Type "Int") "head" [] (Type "StreamOfInt")]] -> True
+              _ -> False)
     describe "command line" $ do
         it "ignores whitespace" $ do
-            parse parseExp "" "  x  " `shouldBe` Right (PVar "x")
+            parse parseExp "" "  x  " `shouldSatisfy` (\x -> case x of
+              Right (PVar _ "x") -> True
+              _ -> False)
         it "uses the longest match" $ do
-            parse parseExp "" "x()" `shouldBe` Right (PApp "x" [])
+            parse parseExp "" "x()" `shouldSatisfy` (\x -> case x of
+              Right (PApp _ "x" []) -> True
+              _ -> False)

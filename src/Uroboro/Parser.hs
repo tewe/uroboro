@@ -56,10 +56,18 @@ fold :: a -> [a -> a] -> a
 fold x [] = x
 fold x (f:fs) = f (fold x fs)
 
+-- |Variant of liftM that also stores the current location
+liftLoc :: (Location -> a -> b) -> Parser a -> Parser b
+liftLoc make parser = do
+  pos <- getPosition
+  let loc = convertLocation pos
+  arg <- parser
+  return (make loc arg)
+
 -- |Parse "a.name(b, ...)...".
-dotNotation :: (String -> [b] -> a -> a) -> Parser a -> Parser b -> Parser a
+dotNotation :: (Location -> String -> [b] -> a -> a) -> Parser a -> Parser b -> Parser a
 dotNotation make a b = liftM fold_ a <*> (dot *> sepBy1 name dot)
-            where name = liftM make identifier <*> args b
+            where name = liftLoc make identifier <*> args b
                   fold_ x l = fold x (reverse l)            -- TODO make fold into foldr.
 
 -- |Parse expression.
@@ -67,8 +75,8 @@ pexp :: Parser PExp
 pexp = choice [des, app, var] <?> "expression"
   where
     des = try $ dotNotation PDes (app <|> var <?> "function or variable") pexp
-    app = try $ liftM PApp identifier <*> args pexp
-    var = liftM PVar identifier
+    app = try $ liftLoc PApp identifier <*> args pexp
+    var = liftLoc PVar identifier
 
 -- | Use up all input for one parser.
 exactly :: Parser a -> Parser a
@@ -82,15 +90,15 @@ parseExp = exactly pexp
 pp :: Parser PP
 pp = choice [con, var] <?> "pattern"
   where
-    con = try $ liftM PPCon identifier <*> args pp
-    var = liftM PPVar identifier
+    con = try $ liftLoc PPCon identifier <*> args pp
+    var = liftLoc PPVar identifier
 
 -- |Parse copattern.
 pq :: Parser PQ
 pq = choice [des, app] <?> "copattern"
   where
     des = try $ dotNotation PQDes (app <?> "function") pp
-    app = liftM PQApp identifier <*> args pp
+    app = liftLoc PQApp identifier <*> args pp
 
 -- |Parse whole file.
 parseDef :: Parser [PT]
@@ -98,22 +106,22 @@ parseDef = exactly $ many (choice [pos, neg, fun])
   where
     pos = definition "data" PTPos <*> where1 con
     neg = definition "codata" PTNeg <*> where1 des
-    fun = liftM PTFun (reserved "function" *> identifier) <*>
+    fun = liftLoc PTFun (reserved "function" *> identifier) <*>
         args typ <*> (colon *> typ) <*> where1 rul
 
-    con = liftM (flip3 PTCon) identifier <*> args typ <*> (colon *> typ)
-    des = liftM (flip4 PTDes) typ <*>
+    con = liftLoc (flip3 PTCon) identifier <*> args typ <*> (colon *> typ)
+    des = liftLoc (flip4 PTDes) typ <*>
         (dot *> identifier) <*> args typ <*> (colon *> typ)
-    rul = liftM PTRule pq <*> (symbol "=" *> pexp)
+    rul = liftLoc PTRule pq <*> (symbol "=" *> pexp)
 
     typ :: Parser Type
     typ = liftM Type identifier
 
-    flip3 f a b c   = f c a b
-    flip4 f a b c d = f d b c a
+    flip3 f loc a b c   = f loc c a b
+    flip4 f loc a b c d = f loc d b c a
 
-    definition :: String -> (Type -> a) -> Parser a
-    definition kind make = liftM make (reserved kind *> typ)
+    definition :: String -> (Location -> Type -> a) -> Parser a
+    definition kind make = liftLoc make (reserved kind *> typ)
 
     where1 :: Parser a -> Parser [a]
     where1 a = reserved "where" *> many1 a
