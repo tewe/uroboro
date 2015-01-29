@@ -4,6 +4,7 @@ Description : Store and format error messages
 module Uroboro.Error
     ( Error (MakeError)
     , Location (MakeLocation)
+    , failAt
     ) where
 
 import Data.List (intercalate)
@@ -26,3 +27,7 @@ instance Show Error where
       [ show location
       , " Syntax Error"
       ] ++ (unlines $ map ("  " ++) $ lines $ message)
+
+-- |Fail the monad, but with location.
+failAt :: Location -> String -> Either Error a
+failAt location message = Left $ MakeError location message

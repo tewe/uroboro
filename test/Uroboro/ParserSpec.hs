@@ -6,7 +6,7 @@ module Uroboro.ParserSpec
     ) where
 
 import Data.Either (isRight)
-import Text.Parsec (parse, ParseError)
+import Text.Parsec (parse)
 
 import Test.Hspec
 
