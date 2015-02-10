@@ -6,6 +6,8 @@ Typecheck parser output, which turns it into interpreter input.
 module Uroboro.Checker
     (
       checkPExp
+    , preCheckPT
+    , postCheckPT
     , checkPT
     , Context
     , emptyProgram
@@ -186,8 +188,61 @@ checkPTRule p s (PTRule loc left right) = do
     else
         failAt loc "Shadowed Variable"
 
+-- |Fold to collect definitions.
+preCheckPT :: Program -> PT -> Either Error Program
+preCheckPT prog@(Program names cons _ _ _) (PTPos loc name cons')
+    | name `elem` names  = failAt loc "Shadowed Definition"
+    | any mismatch cons' = failAt loc "Definition Mismatch"
+    | otherwise          = Right prog {
+          typeNames = (name:names)
+        , constructors = cons ++ cons'
+        }
+  where
+    mismatch (PTCon _loc' returnType _ _) = returnType /= name
+preCheckPT prog@(Program names _ des _ _) (PTNeg loc name des')
+    | name `elem` names = failAt loc "Shadowed Definition"
+    | any mismatch des' = failAt loc "Definition Mismatch"
+    | otherwise         = Right prog {
+          typeNames = (name:names)
+        , destructors = des ++ des'
+        }
+  where
+    mismatch (PTDes _loc' _ _ _ innerType) = innerType /= name
+preCheckPT prog@(Program _ _ _ funs rulz) (PTFun loc name argTypes returnType _)
+    | any clash rulz     = failAt loc "Shadowed Definition"
+    | otherwise = do
+        let sig = (name, (loc, argTypes, returnType))
+        let recursive = prog {
+              functions = (sig:funs)
+            }
+        return recursive
+  where
+    clash (name', _) = name' == name
+
 -- |Fold to typecheck definitions.
-checkPT :: Program -> PT -> Either Error Program
+postCheckPT :: Program -> PT -> Either Error Program
+postCheckPT prog@(Program names _ _ _ _) (PTPos loc name cons')
+    | any missing cons'  = failAt loc "Missing Definition"
+    | otherwise          = Right prog
+  where
+    missing (PTCon _loc' _ _ args)        = (nub args) \\ (name:names) /= []
+postCheckPT prog@(Program names _ _ _ _) (PTNeg loc name des')
+    | any missing des'  = failAt loc $
+        "Missing Definition: " ++ typeName name ++
+        " has a destructor with an unknown argument type"
+    | otherwise         = Right prog
+  where
+    missing (PTDes _loc' _ _ args _)       = (nub args) \\ (name:names) /= []
+postCheckPT prog@(Program _ _ _ _ rulz) (PTFun loc name argTypes returnType rs)
+    = do
+        let sig = (name, (loc, argTypes, returnType))
+        trs <- mapM (checkPTRule prog sig) rs
+        return prog {
+              rules = ((name, trs):rulz)
+            }
+
+-- |Fold to typecheck definitions.
+checkPT :: Program -> PT -> Either Error Program    -- TODO adjust tests, remove function
 checkPT prog@(Program names cons _ _ _) (PTPos loc name cons')
     | name `elem` names  = failAt loc "Shadowed Definition"
     | any mismatch cons' = failAt loc "Definition Mismatch"
@@ -228,4 +283,7 @@ checkPT prog@(Program _ _ _ funs rulz) (PTFun loc name argTypes returnType rs)
 
 -- |Turn parser output into interpreter input.
 typecheck :: [PT] -> Either Error Rules
-typecheck defs = foldM checkPT emptyProgram defs >>= return . rules
+typecheck defs = do
+    pre  <- foldM preCheckPT emptyProgram defs
+    prog <- foldM postCheckPT pre defs
+    return $ rules prog

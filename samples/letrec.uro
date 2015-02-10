@@ -1,0 +1,15 @@
+data Nat where
+	zero() : Nat
+	succ(Nat) : Nat
+
+data Bool where
+	true(): Bool
+	false(): Bool
+
+function even(Nat): Bool where
+	even(zero()) = true()
+	even(succ(n)) = odd(n)
+
+function odd(Nat): Bool where
+	odd(zero()) = false()
+	odd(succ(n)) = even(n)

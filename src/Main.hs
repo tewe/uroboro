@@ -10,11 +10,18 @@ module Main
     , Mode(..)
     ) where
 
-import Control.Monad (foldM, foldM_, forM, zipWithM)
+import Control.Monad (foldM, forM, void)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
-import Uroboro.Checker (checkPT, emptyProgram, inferPExp, rules)
+import Uroboro.Checker
+    (
+      preCheckPT
+    , postCheckPT
+    , typecheck
+    , emptyProgram
+    , inferPExp
+    , rules)
 import Uroboro.Interpreter (eval)
 import Uroboro.Parser (parseFile, parseExpression)
 import Uroboro.PrettyPrint (render)
@@ -58,13 +65,14 @@ main = do
             defs  <- parseFiles paths
             pexp  <- eitherIO $ parseExpression "command line" input
 
-            prog <- eitherIO $ foldM checkPT emptyProgram defs
+            pre  <- eitherIO $ foldM preCheckPT emptyProgram defs
+            prog <- eitherIO $ foldM postCheckPT pre defs
             texp  <- eitherIO $ inferPExp prog [] pexp
 
             putStrLn (render $ eval (rules prog) texp)
         Typecheck paths -> do
             defs  <- parseFiles paths
-            eitherIO $ foldM_ checkPT emptyProgram defs
+            eitherIO $ void (typecheck defs)
         Help -> do
             putStrLn "USAGE: uroboro FILES [-- EXPRESSION]"
             exitFailure
