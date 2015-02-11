@@ -242,44 +242,8 @@ postCheckPT prog@(Program _ _ _ _ rulz) (PTFun loc name argTypes returnType rs)
             }
 
 -- |Fold to typecheck definitions.
-checkPT :: Program -> PT -> Either Error Program    -- TODO adjust tests, remove function
-checkPT prog@(Program names cons _ _ _) (PTPos loc name cons')
-    | name `elem` names  = failAt loc "Shadowed Definition"
-    | any mismatch cons' = failAt loc "Definition Mismatch"
-    | any missing cons'  = failAt loc "Missing Definition"
-    | otherwise          = Right prog {
-          typeNames = (name:names)
-        , constructors = cons ++ cons'
-        }
-  where
-    mismatch (PTCon _loc' returnType _ _) = returnType /= name
-    missing (PTCon _loc' _ _ args)        = (nub args) \\ (name:names) /= []
-checkPT prog@(Program names _ des _ _) (PTNeg loc name des')
-    | name `elem` names = failAt loc "Shadowed Definition"
-    | any mismatch des' = failAt loc "Definition Mismatch"
-    | any missing des'  = failAt loc $
-        "Missing Definition: " ++ typeName name ++
-        " has a destructor with an unknown argument type"
-    | otherwise         = Right prog {
-          typeNames = (name:names)
-        , destructors = des ++ des'
-        }
-  where
-    mismatch (PTDes _loc' _ _ _ innerType) = innerType /= name
-    missing (PTDes _loc' _ _ args _)       = (nub args) \\ (name:names) /= []
-checkPT prog@(Program _ _ _ funs rulz) (PTFun loc name argTypes returnType rs)
-    | any clash rulz     = failAt loc "Shadowed Definition"
-    | otherwise = do
-        let sig = (name, (loc, argTypes, returnType))
-        let recursive = prog {
-              functions = (sig:funs)
-            }
-        trs <- mapM (checkPTRule recursive sig) rs
-        return recursive {
-              rules = ((name, trs):rulz)
-            }
-  where
-    clash (name', _) = name' == name
+checkPT :: Program -> PT -> Either Error Program
+checkPT prog def = preCheckPT prog def >>= (flip postCheckPT) def
 
 -- |Turn parser output into interpreter input.
 typecheck :: [PT] -> Either Error Rules
