@@ -22,18 +22,32 @@ import Text.Parsec (Parsec)
 import qualified Text.Parsec.Token as P -- TODO have Haddock use those docstrings.
 
 import Uroboro.Language (languageDef)
--- TODO add signatures using our Parser type.
 
 -- |Parser without user state.
 type Parser = Parsec String ()
 
 lexer      = P.makeTokenParser languageDef
 
+colon      :: Parser String
 colon      = P.colon      lexer
+
+commaSep   :: Parser a -> Parser [a]
 commaSep   = P.commaSep   lexer
+
+dot        :: Parser String
 dot        = P.dot        lexer
+
+identifier :: Parser String
 identifier = P.identifier lexer
+
+parens     :: Parser a -> Parser a
 parens     = P.parens     lexer
+
+reserved   :: String -> Parser ()
 reserved   = P.reserved   lexer
+
+symbol     :: String -> Parser String
 symbol     = P.symbol     lexer
+
+whiteSpace :: Parser ()
 whiteSpace = P.whiteSpace lexer
