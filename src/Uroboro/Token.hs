@@ -7,7 +7,8 @@ We operate above the character level, so we don't have to deal with variable whi
 -}
 module Uroboro.Token
     (
-      colon
+      Parser
+    , colon
     , commaSep
     , dot
     , identifier
@@ -17,10 +18,14 @@ module Uroboro.Token
     , whiteSpace
     ) where
 
+import Text.Parsec (Parsec)
 import qualified Text.Parsec.Token as P -- TODO have Haddock use those docstrings.
 
 import Uroboro.Language (languageDef)
 -- TODO add signatures using our Parser type.
+
+-- |Parser without user state.
+type Parser = Parsec String ()
 
 lexer      = P.makeTokenParser languageDef
 

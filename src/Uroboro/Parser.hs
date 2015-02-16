@@ -44,9 +44,6 @@ parseFile fname input = left convertError $ parse parseDef fname input
 parseExpression :: FilePath -> String -> Either Error PExp
 parseExpression fname input = left convertError $ parse parseExp fname input
 
--- |Parser without user state.
-type Parser = Parsec String ()
-
 -- |Parse "(p, ...)".
 args :: Parser a -> Parser [a]
 args p = parens (commaSep p)
