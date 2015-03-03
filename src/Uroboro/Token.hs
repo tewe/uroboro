@@ -1,9 +1,6 @@
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
-
 {-|
 Description : Primitive parsers
 
-We operate above the character level, so we don't have to deal with variable whitespace.
 -}
 module Uroboro.Token
     (
@@ -18,36 +15,75 @@ module Uroboro.Token
     , whiteSpace
     ) where
 
-import Text.Parsec (Parsec)
-import qualified Text.Parsec.Token as P -- TODO have Haddock use those docstrings.
+import Control.Applicative ((<$>), (<*>), (<*), (*>))
 
-import Uroboro.Language (languageDef)
+import Text.Parsec
+import Text.Parsec.Char
 
 -- |Parser without user state.
 type Parser = Parsec String ()
 
-lexer      = P.makeTokenParser languageDef
-
 colon      :: Parser String
-colon      = P.colon      lexer
+colon      = symbol ":"
+
+comma      :: Parser String
+comma      = symbol ","
 
 commaSep   :: Parser a -> Parser [a]
-commaSep   = P.commaSep   lexer
+commaSep p = sepBy p comma
 
 dot        :: Parser String
-dot        = P.dot        lexer
+dot        = symbol "."
+
+ident      :: Parser String
+ident      = (:) <$> identStart <*> many identPart
+
+identStart :: Parser Char
+identStart = letter <|> oneOf "_"
+
+identPart  :: Parser Char
+identPart  = alphaNum <|> oneOf "_'"
 
 identifier :: Parser String
-identifier = P.identifier lexer
+identifier = lexeme $ try $ do
+  name <- ident
+  case name of
+    "codata" -> unexpected "keyword 'codata'"
+    "data" -> unexpected "keyword 'data'"
+    "function" -> unexpected "keyword 'function'"
+    "where" -> unexpected "keyword 'where'"
+    _ -> return name
+
+lparen     :: Parser String
+lparen     = symbol "("
+
+rparen     :: Parser String
+rparen     = symbol ")"
 
 parens     :: Parser a -> Parser a
-parens     = P.parens     lexer
+parens     = between lparen rparen
 
 reserved   :: String -> Parser ()
-reserved   = P.reserved   lexer
+reserved s =  (lexeme $ try $ string s >> notFollowedBy identPart)
+                <?> "keyword '" ++ s ++ "'"
+
+skip       :: Parser a -> Parser ()
+skip p     = p *> return ()
 
 symbol     :: String -> Parser String
-symbol     = P.symbol     lexer
+symbol s   = lexeme (string s)
 
 whiteSpace :: Parser ()
-whiteSpace = P.whiteSpace lexer
+whiteSpace = skipMany (skip space <|> single <|> multi <?> "") where
+  single = do
+    try (string "--") *> skipMany (noneOf "\r\n")
+  multi = try (string "{-") *> nested
+  nested =
+    char '-' *> (char '}' *> return () <|>
+                 nested) <|>
+    char '{' *> (char '-' *> nested *> nested <|>
+                 nested) <|>
+    anyChar  *> nested
+
+lexeme :: Parser a -> Parser a
+lexeme p = p <* whiteSpace
