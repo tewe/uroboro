@@ -15,7 +15,7 @@ module Uroboro.Parser
     , pq
     ) where
 
-import Control.Applicative ((<*), (<*>), (*>))
+import Control.Applicative ((<*>), (*>))
 import Control.Arrow (left)
 import Control.Monad (liftM)
 
@@ -74,10 +74,6 @@ pexp = choice [des, app, var] <?> "expression"
     des = try $ dotNotation PDes (app <|> var <?> "function or variable") pexp
     app = try $ liftLoc PApp identifier <*> args pexp
     var = liftLoc PVar identifier
-
--- | Use up all input for one parser.
-exactly :: Parser a -> Parser a
-exactly parser = whiteSpace *> parser <* eof
 
 -- |Parse exactly one expression.
 parseExp :: Parser PExp

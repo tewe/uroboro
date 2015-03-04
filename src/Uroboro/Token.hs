@@ -5,6 +5,7 @@ Description : Primitive parsers
 module Uroboro.Token
     ( -- * Parser type
       Parser
+    , exactly
       -- * Parsers for whole tokens
       -- $wholetokens
     , colon
@@ -26,6 +27,10 @@ import Text.Parsec.Pos
 
 -- | Parser without user state.
 type Parser = Parsec String ()
+
+-- | Use up all input for one parser.
+exactly :: Parser a -> Parser a
+exactly parser = whiteSpace *> parser <* eof
 
 -- $wholetokens
 --
