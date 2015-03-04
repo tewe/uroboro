@@ -28,6 +28,7 @@ import Control.Arrow (left)
 import Text.Parsec hiding (parse)
 import qualified Text.Parsec as Parsec
 import Text.Parsec.Error (errorMessages, showErrorMessages)
+import Text.Parsec.Pos
 
 import Uroboro.Error
 
@@ -138,18 +139,26 @@ symbol s   = lexeme (string s)
 -- The parsers in this section parse parts of tokens. They don't
 -- skip 'whiteSpace' automatically.
 
--- | Parser @whiteSpace@ skips whitespace and comments.
+-- | Parser @whiteSpace@ skips whitespace and comments and
+-- implements @{-\# LINE ... \#-}@ pragmas.
 whiteSpace :: Parser ()
 whiteSpace = skipMany (skip space <|> single <|> multi <?> "") where
   single = do
     try (string "--") *> skipMany (noneOf "\r\n")
-  multi = try (string "{-") *> nested
+  multi = try (string "{-") *> (try pragma <|> nested)
   nested =
     char '-' *> (char '}' *> return () <|>
                  nested) <|>
     char '{' *> (char '-' *> nested *> nested <|>
                  nested) <|>
     anyChar  *> nested
+  pragma = do
+    line <- read <$> (string "# LINE " *> many1 digit)
+    file <- string " \"" *> many1 stringChar
+    skip (string "\" #-}")
+    setPosition (newPos file (line - 1) 1)
+    skip (oneOf "\r\n")
+  stringChar = string "\\\"" *> return '"' <|> noneOf "\""
 
 lexeme :: Parser a -> Parser a
 lexeme p = p <* whiteSpace

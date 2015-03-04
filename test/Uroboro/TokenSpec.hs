@@ -45,6 +45,17 @@ spec = do
         it "recognizes nested comments" $ do
             whiteSpace `shouldAccept` "{- {- -} -}"
             whiteSpace `shouldReject` "{- {- -}"
+        it "recognizes {-# LINE #-} pragmas" $ do
+            whiteSpace `shouldAccept` "{-# LINE 5 \"foo\" #-}\n"
+        it "recognizes invalid pragmas as comments" $ do
+            whiteSpace `shouldAccept` "{-# #-}"
+            whiteSpace `shouldAccept` "{-# FOO #-}"
+            whiteSpace `shouldAccept` "{-# FOO -}"
+            whiteSpace `shouldAccept` "{- FOO #-}"
+            whiteSpace `shouldAccept` "{-# LINE #-}"
+            whiteSpace `shouldAccept` "{-# LINE 5 foo #-}"
+            whiteSpace `shouldAccept` "{-# LINE 5 \"foo #-}"
+            whiteSpace `shouldAccept` "{-# LINE \"foo\" #-}"
     context "when reporting errors" $ do
         it "includes location information" $ do
             failingAfter "foo" ""
@@ -53,6 +64,17 @@ spec = do
               `shouldReportLocation` "foo:1:4"
             failingAfter "foo" "\n  "
               `shouldReportLocation` "foo:2:3"
+        it "processes pragmas" $ do
+            failingAfter "foo" "{-# LINE 1 \"bar\" #-}\n"
+              `shouldReportLocation` "bar:1:1"
+            failingAfter "foo" "{-# LINE 1 \"bar\" #-}\n   "
+              `shouldReportLocation` "bar:1:4"
+            failingAfter "foo" "{-# LINE 1 \"bar\" #-}\n\n  "
+              `shouldReportLocation` "bar:2:3"
+            failingAfter "foo" "\n{-# LINE 5 \"bar\" #-}\n"
+              `shouldReportLocation` "bar:5:1"
+            failingAfter "foo" "\n{-# LINE 5 \"bar\" #-}\n\n"
+              `shouldReportLocation` "bar:6:1"
 
 failingAfter :: FilePath -> String -> Either Error a
 failingAfter = parse (exactly (fail ""))
