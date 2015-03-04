@@ -5,6 +5,8 @@ module Uroboro.TokenSpec
 
 import Test.Hspec
 
+import Uroboro.Error
+
 import Uroboro.Token
 
 import Utils
@@ -43,3 +45,19 @@ spec = do
         it "recognizes nested comments" $ do
             whiteSpace `shouldAccept` "{- {- -} -}"
             whiteSpace `shouldReject` "{- {- -}"
+    context "when reporting errors" $ do
+        it "includes location information" $ do
+            failingAfter "foo" ""
+              `shouldReportLocation` "foo:1:1"
+            failingAfter "foo" "   "
+              `shouldReportLocation` "foo:1:4"
+            failingAfter "foo" "\n  "
+              `shouldReportLocation` "foo:2:3"
+
+failingAfter :: FilePath -> String -> Either Error a
+failingAfter = parse (exactly (fail ""))
+
+shouldReportLocation :: Either Error a -> String -> Expectation
+shouldReportLocation (Left e) loc = show e `shouldContain` loc
+shouldReportLocation (Right _) _ =
+  expectationFailure "Parsing succeded."
