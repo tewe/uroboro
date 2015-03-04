@@ -8,6 +8,7 @@ module Uroboro.Parser
       -- * Parsing Uroboro
       parseFile
     , parseExpression
+    , parse
       -- * Individual parsers
     , parseDef
     , parseExp
@@ -36,13 +37,17 @@ import Uroboro.Tree
     , Type(..)
     )
 
+-- | Parse something.
+parse :: Parser a -> FilePath -> String -> Either Error a
+parse parser fname input = left convertError $ parse parser fname input
+
 -- | Parse whole file.
 parseFile :: FilePath -> String -> Either Error [PT]
-parseFile fname input = left convertError $ parse parseDef fname input
+parseFile = parse parseDef
 
 -- | Parse expression.
 parseExpression :: FilePath -> String -> Either Error PExp
-parseExpression fname input = left convertError $ parse parseExp fname input
+parseExpression = parse parseExp
 
 -- |Parse "(p, ...)".
 args :: Parser a -> Parser [a]
