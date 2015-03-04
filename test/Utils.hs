@@ -1,17 +1,12 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Utils
     (
       parseFromFile
     , parseString
     ) where
 
-import Text.Parsec (parse, ParseError)
 
-import Uroboro.Parser (Parser)
+import Uroboro.Parser (parse, Parser)
 
-instance Eq ParseError where
-   _ == _ = False
 
 -- |Exceptions instead of Either.
 parseIO :: Parser a -> String -> String -> IO a

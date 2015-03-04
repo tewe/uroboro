@@ -17,11 +17,9 @@ module Uroboro.Parser
     ) where
 
 import Control.Applicative ((<*>), (*>))
-import Control.Arrow (left)
 import Control.Monad (liftM)
 
-import Text.Parsec
-import Text.Parsec.Error (errorMessages, showErrorMessages)
+import Text.Parsec hiding (parse)
 
 import Uroboro.Error
 import Uroboro.Token
@@ -36,10 +34,6 @@ import Uroboro.Tree
     , PTRule(..)
     , Type(..)
     )
-
--- | Parse something.
-parse :: Parser a -> FilePath -> String -> Either Error a
-parse parser fname input = left convertError $ parse parser fname input
 
 -- | Parse whole file.
 parseFile :: FilePath -> String -> Either Error [PT]
@@ -61,8 +55,7 @@ fold x (f:fs) = f (fold x fs)
 -- |Variant of liftM that also stores the current location
 liftLoc :: (Location -> a -> b) -> Parser a -> Parser b
 liftLoc make parser = do
-  pos <- getPosition
-  let loc = convertLocation pos
+  loc <- getLocation
   arg <- parser
   return (make loc arg)
 
@@ -123,20 +116,3 @@ parseDef = exactly $ many (choice [pos, neg, fun])
 
     where1 :: Parser a -> Parser [a]
     where1 a = reserved "where" *> many1 a
-
--- | Convert location to custom location type
-convertLocation :: SourcePos -> Location
-convertLocation pos = MakeLocation name line column where
-  name = sourceName pos
-  line = sourceLine pos
-  column = sourceColumn pos
-
--- | Convert error to custom error type
-convertError :: ParseError -> Error
-convertError err = MakeError location messages where
-  pos = errorPos err
-  location = convertLocation pos
-  messages = showErrorMessages
-               "or" "unknown parse error" "expecting"
-               "unexpected" "end of input"
-               (errorMessages err)

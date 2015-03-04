@@ -5,6 +5,8 @@ Description : Primitive parsers
 module Uroboro.Token
     ( -- * Parser type
       Parser
+    , parse
+    , getLocation
     , exactly
       -- * Parsers for whole tokens
       -- $wholetokens
@@ -21,9 +23,13 @@ module Uroboro.Token
     ) where
 
 import Control.Applicative ((<$>), (<*>), (<*), (*>))
+import Control.Arrow (left)
 
-import Text.Parsec
-import Text.Parsec.Pos
+import Text.Parsec hiding (parse)
+import qualified Text.Parsec as Parsec
+import Text.Parsec.Error (errorMessages, showErrorMessages)
+
+import Uroboro.Error
 
 -- | Parser without user state.
 type Parser = Parsec String ()
@@ -31,6 +37,33 @@ type Parser = Parsec String ()
 -- | Use up all input for one parser.
 exactly :: Parser a -> Parser a
 exactly parser = whiteSpace *> parser <* eof
+
+-- | Parse something.
+parse :: Parser a -> FilePath -> String -> Either Error a
+parse parser fname input = left convertError $ Parsec.parse parser fname input
+
+-- Get current location.
+getLocation :: Parser Location
+getLocation = do
+  pos <- getPosition
+  return (convertLocation pos)
+
+-- | Convert location to custom location type
+convertLocation :: SourcePos -> Location
+convertLocation pos = MakeLocation name line column where
+  name = sourceName pos
+  line = sourceLine pos
+  column = sourceColumn pos
+
+-- | Convert error to custom error type
+convertError :: ParseError -> Error
+convertError err = MakeError location messages where
+  pos = errorPos err
+  location = convertLocation pos
+  messages = showErrorMessages
+               "or" "unknown parse error" "expecting"
+               "unexpected" "end of input"
+               (errorMessages err)
 
 -- $wholetokens
 --
