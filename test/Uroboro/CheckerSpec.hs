@@ -23,7 +23,7 @@ import Uroboro.Checker
     )
 import Uroboro.Error
 import Uroboro.Parser (parseDef, parseExp)
-import Uroboro.Tree (TExp(..), Type(..))
+import Uroboro.Tree.Internal (TExp(..), Type(..))
 import Utils (parseString)
 
 prelude :: IO Program

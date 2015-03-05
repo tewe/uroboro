@@ -25,7 +25,7 @@ import Uroboro.Checker
 import Uroboro.Interpreter (eval)
 import Uroboro.Parser (parseFile, parseExpression)
 import Uroboro.PrettyPrint (render)
-import Uroboro.Tree (PT)
+import Uroboro.Tree.External (PT)
 
 -- |How the program operates, and on what data.
 data Mode = Help

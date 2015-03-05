@@ -10,15 +10,7 @@ import Test.Hspec
 
 import Paths_uroboro (getDataFileName)
 import Uroboro.Parser (parseDef, parseExp, pq)
-import Uroboro.Tree
-    (
-      PExp(..)
-    , PQ(..)
-    , PT(..)
-    , PTCon(..)
-    , PTDes(..)
-    , Type(..)
-    )
+import Uroboro.Tree.External
 
 spec :: Spec
 spec = do

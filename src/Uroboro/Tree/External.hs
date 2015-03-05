@@ -1,10 +1,13 @@
 {-|
-Description : Parse tree and AST
+Description : Parse tree.
 
-The program representations we work on.
+Representation of Uroboro programs as abstract syntax tree. This
+is the "external" program representation produced by the parser.
 -}
-module Uroboro.Tree
+
+module Uroboro.Tree.External
        ( -- * Common parts
+         -- $common
          Identifier
        , Type (Type)
          -- * Parse tree
@@ -15,22 +18,13 @@ module Uroboro.Tree
        , PTDes (PTDes)
        , PTRule (PTRule)
        , PT (PTPos, PTNeg, PTFun)
-         -- * Typed syntax tree
-       , TExp (TVar, TApp, TCon, TDes)
-       , TP (TPVar, TPCon)
-       , TQ (TQApp, TQDes)
-       , Rule
-       , Rules
        ) where
 
 import Uroboro.Error (Location)
+import Uroboro.Tree.Common
 
--- |This is used for type names, function names, constructor and
--- destructor names, as well as variable names.
-type Identifier = String
-
--- |Represents both positive and negative data types.
-newtype Type = Type Identifier deriving (Eq, Show)
+-- $common
+-- Reexported from "Uroboro.Tree.Common".
 
 -- |Expression (Term).
 data PExp
@@ -74,27 +68,3 @@ data PT
     -- |Function.
     | PTFun Location Identifier [Type] Type [PTRule] deriving (Show)
 
--- |Expression with type annotations.
-data TExp
-    -- |Variable.
-    = TVar Type Identifier
-    -- |Function application.
-    | TApp Type Identifier [TExp]
-    -- |Constructor application.
-    | TCon Type Identifier [TExp]
-    -- |Destructor application.
-    | TDes Type Identifier [TExp] TExp deriving (Show, Eq)
-
--- |Pattern with type annotations.
-data TP = TPVar Type Identifier
-        | TPCon Type Identifier [TP] deriving (Show, Eq)
-
--- |Copattern with type annotations.
-data TQ = TQApp Type Identifier [TP]
-        | TQDes Type Identifier [TP] TQ deriving (Show, Eq)
-
--- |One rule of a function definition.
-type Rule = (TQ, TExp)
-
--- |A complete program.
-type Rules = [(Identifier, [Rule])]

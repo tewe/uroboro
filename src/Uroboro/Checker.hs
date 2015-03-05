@@ -22,23 +22,8 @@ import Data.List ((\\), find, nub, nubBy)
 
 import Uroboro.Error (Error, Location, failAt)
 
-import Uroboro.Tree
-    (
-      Identifier
-    , PExp(..)
-    , PP(..)
-    , PQ(..)
-    , PT(..)
-    , PTCon(..)
-    , PTDes(..)
-    , PTRule(..)
-    , Rule
-    , Rules
-    , TExp(..)
-    , TP(..)
-    , TQ(..)
-    , Type(..)
-    )
+import Uroboro.Tree.Internal
+import Uroboro.Tree.External
 
 -- |Signature of a function definition.
 type PTSig = (Identifier, (Location, [Type], Type))

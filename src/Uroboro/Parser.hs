@@ -24,7 +24,7 @@ import Text.Parsec.Error (errorMessages, showErrorMessages)
 
 import Uroboro.Error
 import Uroboro.Token
-import Uroboro.Tree
+import Uroboro.Tree.External
     (
       PExp(..)
     , PP(..)

@@ -11,13 +11,8 @@ import Uroboro.Checker (typecheck, inferPExp)
 import Uroboro.CheckerSpec (prelude)
 import Uroboro.Interpreter (pmatch, eval)
 import Uroboro.Parser (parseDef, parseExp)
-import Uroboro.Tree
-    (
-      Rules
-    , TExp(..)
-    , TP(..)
-    , Type(..)
-    )
+import Uroboro.Tree.Internal
+
 import Utils (parseString)
 
 rules :: IO Rules

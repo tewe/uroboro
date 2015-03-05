@@ -43,7 +43,9 @@ library
     Uroboro.Parser
     Uroboro.PrettyPrint
     Uroboro.Token
-    Uroboro.Tree
+    Uroboro.Tree.Common
+    Uroboro.Tree.External
+    Uroboro.Tree.Internal
   other-modules:       Paths_uroboro
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8, parsec >=3.1 && <3.2

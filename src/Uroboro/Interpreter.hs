@@ -12,7 +12,7 @@ module Uroboro.Interpreter
 import Control.Monad (zipWithM)
 import Data.Either (rights)
 
-import Uroboro.Tree
+import Uroboro.Tree.Internal
     (
       Identifier
     , Rule
