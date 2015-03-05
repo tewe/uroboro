@@ -3,20 +3,34 @@ Description : Parse tree and AST
 
 The program representations we work on.
 -}
-module Uroboro.Tree where
+module Uroboro.Tree
+       ( -- * Common parts
+         Identifier
+       , Type (Type)
+         -- * Parse tree
+       , PExp (PVar, PApp, PDes)
+       , PP (PPVar, PPCon)
+       , PQ (PQApp, PQDes)
+       , PTCon (PTCon)
+       , PTDes (PTDes)
+       , PTRule (PTRule)
+       , PT (PTPos, PTNeg, PTFun)
+         -- * Typed syntax tree
+       , TExp (TVar, TApp, TCon, TDes)
+       , TP (TPVar, TPCon)
+       , TQ (TQApp, TQDes)
+       , Rule
+       , Rules
+       ) where
 
 import Uroboro.Error (Location)
 
--- |This is used for type names, function names, constructor and destructor names,
--- as well as variable names.
+-- |This is used for type names, function names, constructor and
+-- destructor names, as well as variable names.
 type Identifier = String
+
 -- |Represents both positive and negative data types.
 newtype Type = Type Identifier deriving (Eq, Show)
-
--- |
--- = Parse Tree
-
--- TODO move headings into export list.
 
 -- |Expression (Term).
 data PExp
@@ -60,9 +74,6 @@ data PT
     -- |Function.
     | PTFun Location Identifier [Type] Type [PTRule] deriving (Show)
 
--- |
--- = Typed Syntax Tree
-
 -- |Expression with type annotations.
 data TExp
     -- |Variable.
@@ -84,5 +95,6 @@ data TQ = TQApp Type Identifier [TP]
 
 -- |One rule of a function definition.
 type Rule = (TQ, TExp)
+
 -- |A complete program.
 type Rules = [(Identifier, [Rule])]
