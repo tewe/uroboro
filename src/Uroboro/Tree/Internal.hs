@@ -12,9 +12,9 @@ module Uroboro.Tree.Internal
          Identifier
        , Type (Type)
          -- * Typed syntax tree
-       , TExp (TVar, TApp, TCon, TDes)
-       , TP (TPVar, TPCon)
-       , TQ (TQApp, TQDes)
+       , Exp (VarExp, AppExp, ConExp, DesExp)
+       , Pat (VarPat, ConPat)
+       , Cop (AppCop, DesCop)
        , Rule
        , Rules
        ) where
@@ -25,26 +25,26 @@ import Uroboro.Tree.Common
 -- Reexported from "Uroboro.Tree.Common".
 
 -- |Expression with type annotations.
-data TExp
+data Exp
     -- |Variable.
-    = TVar Type Identifier
+    = VarExp Type Identifier
     -- |Function application.
-    | TApp Type Identifier [TExp]
+    | AppExp Type Identifier [Exp]
     -- |Constructor application.
-    | TCon Type Identifier [TExp]
+    | ConExp Type Identifier [Exp]
     -- |Destructor application.
-    | TDes Type Identifier [TExp] TExp deriving (Show, Eq)
+    | DesExp Type Identifier [Exp] Exp deriving (Show, Eq)
 
 -- |Pattern with type annotations.
-data TP = TPVar Type Identifier
-        | TPCon Type Identifier [TP] deriving (Show, Eq)
+data Pat = VarPat Type Identifier
+         | ConPat Type Identifier [Pat] deriving (Show, Eq)
 
 -- |Copattern with type annotations.
-data TQ = TQApp Type Identifier [TP]
-        | TQDes Type Identifier [TP] TQ deriving (Show, Eq)
+data Cop = AppCop Type Identifier [Pat]
+         | DesCop Type Identifier [Pat] Cop deriving (Show, Eq)
 
 -- |One rule of a function definition.
-type Rule = (TQ, TExp)
+type Rule = (Cop, Exp)
 
 -- |A complete program.
 type Rules = [(Identifier, [Rule])]

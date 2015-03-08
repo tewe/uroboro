@@ -11,13 +11,13 @@ module Uroboro.Tree.External
          Identifier
        , Type (Type)
          -- * Parse tree
-       , PExp (PVar, PApp, PDes)
-       , PP (PPVar, PPCon)
-       , PQ (PQApp, PQDes)
-       , PTCon (PTCon)
-       , PTDes (PTDes)
-       , PTRule (PTRule)
-       , PT (PTPos, PTNeg, PTFun)
+       , Exp (VarExp, AppExp, DesExp)
+       , Pat (VarPat, ConPat)
+       , Cop (AppCop, DesCop)
+       , ConSig (ConSig)
+       , DesSig (DesSig)
+       , Rule (Rule)
+       , Def (DatDef, CodDef, FunDef)
        ) where
 
 import Uroboro.Error (Location)
@@ -27,44 +27,44 @@ import Uroboro.Tree.Common
 -- Reexported from "Uroboro.Tree.Common".
 
 -- |Expression (Term).
-data PExp
+data Exp
     -- |Variable.
-    = PVar Location Identifier
+    = VarExp Location Identifier
     -- |Constructor or function application.
-    | PApp Location Identifier [PExp]
+    | AppExp Location Identifier [Exp]
     -- |Destructor application (Selection).
-    | PDes Location Identifier [PExp] PExp deriving (Show)
+    | DesExp Location Identifier [Exp] Exp deriving (Show)
 
 -- |Pattern.
-data PP
+data Pat
     -- |Variable pattern.
-    = PPVar Location Identifier
+    = VarPat Location Identifier
     -- |Constructor pattern.
-    | PPCon Location Identifier [PP] deriving (Show)
+    | ConPat Location Identifier [Pat] deriving (Show)
 
 -- |Copattern.
-data PQ
+data Cop
     -- |Hole pattern.
-    = PQApp Location Identifier [PP]
+    = AppCop Location Identifier [Pat]
     -- |Destructor pattern.
-    | PQDes Location Identifier [PP] PQ deriving (Show)
+    | DesCop Location Identifier [Pat] Cop deriving (Show)
 
 -- |Constructor definition.
-data PTCon = PTCon Location Type Identifier [Type] deriving (Show)
+data ConSig = ConSig Location Type Identifier [Type] deriving (Show)
 
 -- |Destructor definition.
 -- Return type first, type to destruct last.
-data PTDes = PTDes Location Type Identifier [Type] Type deriving (Show)
+data DesSig = DesSig Location Type Identifier [Type] Type deriving (Show)
 
 -- |Part of a function definition.
-data PTRule = PTRule Location PQ PExp deriving (Show)
+data Rule = Rule Location Cop Exp deriving (Show)
 
 -- |Definition.
-data PT
+data Def
     -- |Data type.
-    = PTPos Location Type [PTCon]
+    = DatDef Location Type [ConSig]
     -- |Codata type.
-    | PTNeg Location Type [PTDes]
+    | CodDef Location Type [DesSig]
     -- |Function.
-    | PTFun Location Identifier [Type] Type [PTRule] deriving (Show)
+    | FunDef Location Identifier [Type] Type [Rule] deriving (Show)
 

@@ -26,22 +26,22 @@ import Uroboro.Error
 import Uroboro.Token
 import Uroboro.Tree.External
     (
-      PExp(..)
-    , PP(..)
-    , PQ(..)
-    , PT(..)
-    , PTCon(..)
-    , PTDes(..)
-    , PTRule(..)
+      Exp(..)
+    , Pat(..)
+    , Cop(..)
+    , Def(..)
+    , ConSig(..)
+    , DesSig(..)
+    , Rule(..)
     , Type(..)
     )
 
 -- | Parse whole file.
-parseFile :: FilePath -> String -> Either Error [PT]
+parseFile :: FilePath -> String -> Either Error [Def]
 parseFile = parse parseDef
 
 -- | Parse expression.
-parseExpression :: FilePath -> String -> Either Error PExp
+parseExpression :: FilePath -> String -> Either Error Exp
 parseExpression = parse parseExp
 
 -- |Parse "(p, ...)".
@@ -67,44 +67,44 @@ dotNotation make a b = liftM fold_ a <*> (dot *> sepBy1 name dot)
                   fold_ x l = fold x (reverse l)            -- TODO make fold into foldr.
 
 -- |Parse expression.
-pexp :: Parser PExp
+pexp :: Parser Exp
 pexp = choice [des, app, var] <?> "expression"
   where
-    des = try $ dotNotation PDes (app <|> var <?> "function or variable") pexp
-    app = try $ liftLoc PApp identifier <*> args pexp
-    var = liftLoc PVar identifier
+    des = try $ dotNotation DesExp (app <|> var <?> "function or variable") pexp
+    app = try $ liftLoc AppExp identifier <*> args pexp
+    var = liftLoc VarExp identifier
 
 -- |Parse exactly one expression.
-parseExp :: Parser PExp
+parseExp :: Parser Exp
 parseExp = exactly pexp
 
 -- |Parse pattern.
-pp :: Parser PP
+pp :: Parser Pat
 pp = choice [con, var] <?> "pattern"
   where
-    con = try $ liftLoc PPCon identifier <*> args pp
-    var = liftLoc PPVar identifier
+    con = try $ liftLoc ConPat identifier <*> args pp
+    var = liftLoc VarPat identifier
 
 -- |Parse copattern.
-pq :: Parser PQ
+pq :: Parser Cop
 pq = choice [des, app] <?> "copattern"
   where
-    des = try $ dotNotation PQDes (app <?> "function") pp
-    app = liftLoc PQApp identifier <*> args pp
+    des = try $ dotNotation DesCop (app <?> "function") pp
+    app = liftLoc AppCop identifier <*> args pp
 
 -- |Parse whole file.
-parseDef :: Parser [PT]
+parseDef :: Parser [Def]
 parseDef = exactly $ many (choice [pos, neg, fun])
   where
-    pos = definition "data" PTPos <*> where1 con
-    neg = definition "codata" PTNeg <*> where1 des
-    fun = liftLoc PTFun (reserved "function" *> identifier) <*>
+    pos = definition "data" DatDef <*> where1 con
+    neg = definition "codata" CodDef <*> where1 des
+    fun = liftLoc FunDef (reserved "function" *> identifier) <*>
         args typ <*> (colon *> typ) <*> where1 rul
 
-    con = liftLoc (flip3 PTCon) identifier <*> args typ <*> (colon *> typ)
-    des = liftLoc (flip4 PTDes) typ <*>
+    con = liftLoc (flip3 ConSig) identifier <*> args typ <*> (colon *> typ)
+    des = liftLoc (flip4 DesSig) typ <*>
         (dot *> identifier) <*> args typ <*> (colon *> typ)
-    rul = liftLoc PTRule pq <*> (symbol "=" *> pexp)
+    rul = liftLoc Rule pq <*> (symbol "=" *> pexp)
 
     typ :: Parser Type
     typ = liftM Type identifier
