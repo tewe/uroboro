@@ -124,7 +124,7 @@ parseDef = exactly $ many (choice [pos, neg, fun])
     definition kind make = liftLoc make (reserved kind *> typ)
 
     where1 :: Parser a -> Parser [a]
-    where1 a = reserved "where" *> many1 a
+    where1 a = reserved "where" *> many a
 
 -- | Convert location to custom location type
 convertLocation :: SourcePos -> Location
