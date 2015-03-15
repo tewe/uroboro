@@ -12,8 +12,8 @@ codata IntToInt where
 function add1(): IntToInt where
     add1().apply(x) = succ(x)
 
-function addder(Int): IntToInt where
-    addder(x).apply(y) = add(x, y)
+function adder(Int): IntToInt where
+    adder(x).apply(y) = add(x, y)
 
 codata TwoIntToInt where
     TwoIntToInt.apply(Int, Int): Int
