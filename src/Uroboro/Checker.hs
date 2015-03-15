@@ -98,7 +98,8 @@ checkPQ p (PQApp loc name args) (name', (loc', argTypes, returnType))
     | name == name' = do
         targs <- zipStrict loc loc' (checkPP p) args argTypes
         return $ TQApp returnType name targs
-    | otherwise     = failAt loc "Definition Mismatch"
+    | otherwise     = failAt loc $
+        "Definition Mismatch: " ++ name ++ " used in copattern for " ++ name'
 checkPQ p (PQDes loc name args inner) s = do
     tinner <- checkPQ p inner s
     case find (match (tqReturnType tinner)) (destructors p) of
@@ -129,7 +130,8 @@ checkPExp p c (PApp loc name args) t = case lookup name (functions p) of
     Nothing -> case find match (constructors p) of
         Just (PTCon loc' _ _ argTypes) ->
             zipStrict loc loc'  (checkPExp p c) args argTypes >>= return . TCon t name
-        Nothing -> failAt loc "Missing Definition"
+        Nothing -> failAt loc $
+            "Missing Definition: " ++ name ++ " does not construct a " ++ typeName t
   where
     match (PTCon _loc' returnType n _) = n == name && returnType == t
 checkPExp p c (PDes loc name args inner) t = case find match (destructors p) of
