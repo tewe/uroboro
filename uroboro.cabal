@@ -65,7 +65,8 @@ test-suite tests
   if flag(warnings)
     ghc-options:
       -Wall
-  other-modules:       Paths_uroboro
+  other-modules:
+    Paths_uroboro
   hs-source-dirs:
       test
   main-is:
