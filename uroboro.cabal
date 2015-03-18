@@ -25,6 +25,16 @@ source-repository head
   type:     git
   location: git://github.com/tewe/uroboro.git
 
+flag coverage
+  description:         Enable test coverage checking.
+  default:             False
+  manual:              True
+
+flag warnings
+  description:         Enable all warnings.
+  default:             False
+  manual:              True
+
 library
   exposed-modules:
     Uroboro.Checker
@@ -43,8 +53,11 @@ library
 test-suite tests
   type:
       exitcode-stdio-1.0
-  ghc-options:
+  if flag(coverage)
+    ghc-options:
       -fhpc
+  if flag(warnings)
+    ghc-options:
       -Wall
   other-modules:       Uroboro.Parser, Uroboro.Checker, Uroboro.Token, Uroboro.Interpreter, Uroboro.Tree, Paths_uroboro
   hs-source-dirs:
