@@ -67,6 +67,10 @@ test-suite tests
       -Wall
   other-modules:
     Paths_uroboro
+    Uroboro.CheckerSpec
+    Uroboro.InterpreterSpec
+    Uroboro.ParserSpec
+    Utils
   hs-source-dirs:
       test
   main-is:
