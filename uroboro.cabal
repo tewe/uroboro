@@ -31,6 +31,7 @@ library
     Uroboro.Error
     Uroboro.Interpreter
     Uroboro.Parser
+    Uroboro.PrettyPrint
     Uroboro.Token
     Uroboro.Tree
   other-modules:       Paths_uroboro
