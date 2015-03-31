@@ -20,6 +20,7 @@ import Control.Applicative ((<*>), (*>))
 import Control.Monad (liftM)
 
 import Text.Parsec hiding (parse)
+import Text.Parsec.Error (errorMessages, showErrorMessages)
 
 import Uroboro.Error
 import Uroboro.Token

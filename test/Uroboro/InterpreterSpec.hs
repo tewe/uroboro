@@ -70,6 +70,6 @@ spec = do
     describe "prelude" $ do
         it "adder works" $ do
             p <- rules
-            m <- main "map(addder(succ(zero())), cons(succ(zero()), cons(zero(), empty())))"
+            m <- main "map(adder(succ(zero())), cons(succ(zero()), cons(zero(), empty())))"
             r <- main "cons(succ(succ(zero())), cons(succ(zero()), empty()))"
             eval p m `shouldBe` r
