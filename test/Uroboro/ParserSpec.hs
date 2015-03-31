@@ -43,6 +43,21 @@ spec = do
             parse parseDef "" source `shouldSatisfy` (\x -> case x of
               Right [PTNeg _ (Type "StreamOfInt") [PTDes _ (Type "Int") "head" [] (Type "StreamOfInt")]] -> True
               _ -> False)
+        it "accepts empty functions" $ do
+            let source = "function foo() : Foo where"
+            parse parseDef "" source `shouldSatisfy` (\x -> case x of
+              Right [PTFun _ "foo" [] (Type "Foo") []] -> True
+              _ -> False)
+        it "accepts empty data types" $ do
+            let source = "data Foo where"
+            parse parseDef "" source `shouldSatisfy` (\x -> case x of
+              Right [PTPos _ (Type "Foo") []] -> True
+              _ -> False)
+        it "accepts empty codata types" $ do
+            let source = "codata Foo where"
+            parse parseDef "" source `shouldSatisfy` (\x -> case x of
+              Right [PTNeg _ (Type "Foo") []] -> True
+              _ -> False)
     describe "command line" $ do
         it "ignores whitespace" $ do
             parse parseExp "" "  x  " `shouldSatisfy` (\x -> case x of
