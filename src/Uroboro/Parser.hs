@@ -115,4 +115,21 @@ parseDef = exactly $ many (choice [pos, neg, fun])
     definition kind make = liftLoc make (reserved kind *> typ)
 
     where1 :: Parser a -> Parser [a]
-    where1 a = reserved "where" *> many1 a
+    where1 a = reserved "where" *> many a
+
+-- | Convert location to custom location type
+convertLocation :: SourcePos -> Location
+convertLocation pos = MakeLocation name line column where
+  name = sourceName pos
+  line = sourceLine pos
+  column = sourceColumn pos
+
+-- | Convert error to custom error type
+convertError :: ParseError -> Error
+convertError err = MakeError location messages where
+  pos = errorPos err
+  location = convertLocation pos
+  messages = showErrorMessages
+               "or" "unknown parse error" "expecting"
+               "unexpected" "end of input"
+               (errorMessages err)
