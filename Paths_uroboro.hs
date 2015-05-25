@@ -1,7 +1,7 @@
 {-|
 Description : Mock out Cabal path abstraction
 
-This is a mock copy of soething Cabal generates during installation.
+This is a mock copy of something Cabal generates during installation.
 -}
 module Paths_uroboro
     (
