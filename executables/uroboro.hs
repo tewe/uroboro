@@ -16,16 +16,16 @@ import System.Exit (exitFailure)
 
 import Uroboro.Checker
     (
-      preCheckPT
-    , postCheckPT
+      preCheckDef
+    , postCheckDef
     , typecheck
     , emptyProgram
-    , inferPExp
+    , inferExp
     , rules)
 import Uroboro.Interpreter (eval)
 import Uroboro.Parser (parseFile, parseExpression)
 import Uroboro.PrettyPrint (render)
-import Uroboro.Tree (PT)
+import Uroboro.Tree.External (Def)
 
 -- |How the program operates, and on what data.
 data Mode = Help
@@ -48,7 +48,7 @@ eitherIO (Left e)  = do
 eitherIO (Right b) = return b
 
 -- |Load libraries.
-parseFiles :: [FilePath] -> IO [PT]
+parseFiles :: [FilePath] -> IO [Def]
 parseFiles paths = do
     lol <- forM paths $ \path -> do
       input <- readFile path
@@ -65,9 +65,9 @@ main = do
             defs  <- parseFiles paths
             pexp  <- eitherIO $ parseExpression "command line" input
 
-            pre  <- eitherIO $ foldM preCheckPT emptyProgram defs
-            prog <- eitherIO $ foldM postCheckPT pre defs
-            texp  <- eitherIO $ inferPExp prog [] pexp
+            pre  <- eitherIO $ foldM preCheckDef emptyProgram defs
+            prog <- eitherIO $ foldM postCheckDef pre defs
+            texp  <- eitherIO $ inferExp prog [] pexp
 
             putStrLn (render $ eval (rules prog) texp)
         Typecheck paths -> do

@@ -7,17 +7,12 @@ import Test.Hspec
 import Text.Parsec (parse)
 
 import Paths_uroboro (getDataFileName)
-import Uroboro.Checker (typecheck, inferPExp)
+import Uroboro.Checker (typecheck, inferExp)
 import Uroboro.CheckerSpec (prelude)
 import Uroboro.Interpreter (pmatch, eval)
 import Uroboro.Parser (parseDef, parseExp)
-import Uroboro.Tree
-    (
-      Rules
-    , TExp(..)
-    , TP(..)
-    , Type(..)
-    )
+import Uroboro.Tree.Internal
+
 import Utils (parseString)
 
 rules :: IO Rules
@@ -30,11 +25,11 @@ rules = do
             Left _ -> fail "Checker"
             Right p -> return p
 
-main :: String -> IO TExp
+main :: String -> IO Exp
 main input = do
     pexp <- parseString parseExp input
     prog <- prelude
-    case inferPExp prog [] pexp of
+    case inferExp prog [] pexp of
         Left _ -> fail "Checker"
         Right texp -> return texp
 
@@ -45,13 +40,13 @@ spec = do
         it "fills variables" $ do
             let name = "l"
             let t = Type "ListOfInt"
-            let term = (TCon t "empty" [])
-            pmatch term (TPVar t name) `shouldBe` Right [(name, term)]
+            let term = (ConExp t "empty" [])
+            pmatch term (VarPat t name) `shouldBe` Right [(name, term)]
     describe "eval" $ do
         it "completes" $ do
             p <- rules
             m <- main "add(zero(), succ(zero()))"
-            eval p m `shouldBe` TCon int "succ" [TCon int "zero" []]
+            eval p m `shouldBe` ConExp int "succ" [ConExp int "zero" []]
         it "can run add1(0)" $ do
             p <- rules
             m <- main "add1().apply(zero())"
