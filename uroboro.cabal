@@ -25,23 +25,53 @@ source-repository head
   type:     git
   location: git://github.com/tewe/uroboro.git
 
+flag coverage
+  description:         Enable test coverage checking.
+  default:             False
+  manual:              True
+
+flag warnings
+  description:         Enable all warnings.
+  default:             False
+  manual:              True
+
 library
-  exposed-modules:     Uroboro.Parser, Uroboro.Checker, Uroboro.Token, Uroboro.Interpreter, Uroboro.Tree, Uroboro.Error
+  exposed-modules:
+    Uroboro.Checker
+    Uroboro.Error
+    Uroboro.Interpreter
+    Uroboro.Parser
+    Uroboro.PrettyPrint
+    Uroboro.Token
+    Uroboro.Tree
   other-modules:       Paths_uroboro
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8, parsec >=3.1 && <3.2
   hs-source-dirs:      src
   default-language:    Haskell2010
+  if flag(coverage)
+    ghc-options:
+      -fhpc
+  if flag(warnings)
+    ghc-options:
+      -Wall
 
 test-suite tests
   type:
       exitcode-stdio-1.0
-  ghc-options:
+  if flag(coverage)
+    ghc-options:
       -fhpc
+  if flag(warnings)
+    ghc-options:
       -Wall
-  other-modules:       Uroboro.Parser, Uroboro.Checker, Uroboro.Token, Uroboro.Interpreter, Uroboro.Tree, Paths_uroboro
+  other-modules:
+    Paths_uroboro
+    Uroboro.CheckerSpec
+    Uroboro.InterpreterSpec
+    Uroboro.ParserSpec
+    Utils
   hs-source-dirs:
-      src
       test
   main-is:
       Spec.hs
@@ -53,7 +83,7 @@ test-suite tests
   default-language:    Haskell2010
 
 executable uroboro
-  main-is:             Main.hs
+  main-is:             uroboro.hs
   build-depends:       base >=4.7 && <4.8, parsec >=3.1 && <3.2, uroboro
-  hs-source-dirs:      src
+  hs-source-dirs:      executables
   default-language:    Haskell2010
